@@ -134,6 +134,10 @@ td.new input{background:var(--accent-soft)}
 .paper .sig{display:flex;justify-content:space-between;align-items:flex-end;margin-top:26px;gap:20px;flex-wrap:wrap}
 .paper .sig .r{text-align:right;border-top:1px solid var(--paper-ink);padding-top:4px;min-width:200px}
 .paper .foot{border-top:1px solid var(--paper-line);margin-top:14px;padding-top:6px;font-size:10.5px;color:#444}
+.paper .links{display:flex;justify-content:space-between;align-items:center;gap:16px;border-top:1px solid var(--paper-line);margin-top:12px;padding-top:8px;font-size:11px}
+.paper .links .qr{text-align:center;font-size:10px}
+.paper .links .qr img{width:78px;height:78px;image-rendering:pixelated;display:block;margin:0 auto 2px}
+code.lk{display:block;padding:8px;background:var(--soft);border-radius:6px;font-family:var(--f-data);font-size:12px;word-break:break-all;user-select:all}
 #printArea{display:none}
 @media (max-width:1100px){.layout{grid-template-columns:240px minmax(0,1fr)}}
 .rx{min-width:700px}
@@ -498,8 +502,64 @@ function rxHTML(){
    ${v.testsAdvised?`<h4>Tests before next visit</h4><div>${esc(v.testsAdvised)}</div>`:''}
    ${v.followUp?`<h4>Next visit</h4><div><b>${dmy(v.followUp)}</b></div>`:''}
    <div class="sig"><div></div><div class="r"><b>${esc(s.dr)}</b><div>${esc(s.reg)}</div></div></div>
+   ${linksHTML()}
    ${s.footer?`<div class="foot">${esc(s.footer)}</div>`:''}</div>`;
 }
+/* ---------- your website & app ---------- */
+const PAGES_URL='https://ssgsachin.github.io/Nephrorx/';
+const QR_LIB='https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+function cleanUrl(u){u=(u||'').trim();if(!u)return '';if(!/^https?:\/\//i.test(u))u='https://'+u;return /^https?:\/\/[^\s<>"']+$/i.test(u)?u:''}
+function myLinks(){const s=db.settings;return [['Website',cleanUrl(s.website)],['Our app',cleanUrl(s.appLink)],['Book appointment',cleanUrl(s.bookLink)]].filter(x=>x[1])}
+function qrData(text){try{if(!window.qrcode||!text)return '';const q=window.qrcode(0,'M');q.addData(text);q.make();return q.createDataURL(4,2)}catch(e){return ''}}
+function linksHTML(){const s=db.settings;if(s.linksOnRx===false)return '';const L=myLinks();if(!L.length)return '';
+  const target=cleanUrl(s.bookLink)||cleanUrl(s.website)||cleanUrl(s.appLink);const img=qrData(target);
+  return `<div class="links"><div>${L.map(x=>`<div><b>${x[0]}:</b> ${esc(x[1].replace(/^https?:\/\//,''))}</div>`).join('')}</div>${img?`<div class="qr"><img src="${img}" alt="QR code"><div>${cleanUrl(s.bookLink)?'Scan to book':'Scan to visit'}</div></div>`:''}</div>`}
+(function(){if(window.qrcode)return;const sc=document.createElement('script');sc.src=QR_LIB;document.head.appendChild(sc)})();
+function emrLinkBase(){return framed||!/^https?:/.test(location.protocol)?PAGES_URL:location.origin+location.pathname}
+/* Links from your website/app: #patient?name=..&phone=..&age=..&sex=M|F
+   Opens the patient if the phone number is already registered, otherwise a prefilled New patient form.
+   The part after # never leaves the iPad (browsers do not send it to any server). */
+function handleLink(){
+  const m=(location.hash||'').match(/^#patient\?(.*)$/);if(!m)return;
+  const q=new URLSearchParams(m[1]);
+  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  const phone=(q.get('phone')||'').replace(/\D/g,'').slice(-10);
+  const ex=phone&&db.patients.find(p=>(p.phone||'').replace(/\D/g,'').slice(-10)===phone);
+  if(ex){closeModal();openPatient(ex.id);return}
+  const sx=(q.get('sex')||q.get('gender')||'').trim().toUpperCase().charAt(0);
+  patientForm({name:(q.get('name')||'').slice(0,80),age:(q.get('age')||'').replace(/\D/g,'').slice(0,3),sex:['M','F','O'].includes(sx)?sx:'',phone,address:(q.get('address')||'').slice(0,120)},'Details came from your website or app link. Check them with the patient.');
+}
+window.addEventListener('hashchange',handleLink);
+/* Patient lists from / to your other app (CSV spreadsheet) */
+function parseCSV(t){const rows=[];let row=[],f='',q=false;t=t.replace(/^\uFEFF/,'');
+  for(let i=0;i<t.length;i++){const c=t[i];
+    if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}
+    else if(c==='"')q=true;else if(c===','){row.push(f);f=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(f);f='';if(row.some(x=>x.trim()))rows.push(row);row=[]}else f+=c}
+  row.push(f);if(row.some(x=>x.trim()))rows.push(row);return rows}
+function importPatientsCSV(text){
+  const rows=parseCSV(text);if(rows.length<2)return 'The file has no patient rows.';
+  const H=rows[0].map(h=>h.trim().toLowerCase());
+  const col=re=>H.findIndex(h=>re.test(h));
+  const ci={name:col(/^(patient\s*)?(full\s*)?name$/),first:col(/^first\s*name$/),last:col(/^(last|sur)\s*name$/),age:col(/^age/),sex:col(/^(sex|gender)$/),phone:col(/(phone|mobile|contact|whatsapp)/),addr:col(/^(address|area|city|locality)/)};
+  if(ci.name<0&&ci.first<0)return 'No "Name" column found. The first row must have column names such as Name, Age, Sex, Phone, Address.';
+  let added=0,dup=0,bad=0;
+  rows.slice(1).forEach(r=>{const g=i=>i>=0?(r[i]||'').trim():'';
+    const name=ci.name>=0?g(ci.name):(g(ci.first)+' '+g(ci.last)).trim();if(!name){bad++;return}
+    const phone=g(ci.phone).replace(/\D/g,'').slice(-10);
+    if(phone&&db.patients.some(p=>(p.phone||'').replace(/\D/g,'').slice(-10)===phone)){dup++;return}
+    const sx=g(ci.sex).toUpperCase().charAt(0);
+    db.patients.push({id:uid(),uhid:'NR-'+String(db.settings.nextNo++).padStart(5,'0'),name:name.slice(0,80),age:+(g(ci.age).replace(/\D/g,'').slice(0,3))||'',sex:['M','F','O'].includes(sx)?sx:'',phone,address:g(ci.addr).slice(0,120),consent:null,createdAt:new Date().toISOString(),labs:{},imported:true});added++});
+  save();renderList();
+  return `Added ${added} patient${added===1?'':'s'}.`+(dup?` Skipped ${dup} already in the list (same mobile number).`:'')+(bad?` Skipped ${bad} row${bad===1?'':'s'} without a name.`:'')+(added?' Record consent when each of them next visits.':'');
+}
+function patientsCSV(){const q=v=>{v=String(v==null?'':v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v};
+  const last=pid=>(visitsOf(pid)[0]||{}).date||'';
+  return ['UHID,Name,Age,Sex,Phone,Address,Consent date,Last visit'].concat(db.patients.filter(p=>!p.sample).map(p=>[p.uhid,p.name,p.age,p.sex,p.phone,p.address,p.consent?p.consent.slice(0,10):'',last(p.id)].map(q).join(','))).join('\r\n')}
+function offerFile(name,data,type,out){
+  if(!framed){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();out.textContent='Saved '+name+' to your downloads.'}
+  else if(dl){dl.save({filename:name,data}).then(()=>out.textContent='Saved '+name+'.',err=>out.textContent=err&&err.code==='declined'?'Not saved.':'Saving files is not available here.')}
+  else out.textContent='Saving files is not available here.'}
+
 function waText(){
   const s=db.settings,p=P(cur.pid),v=curVisit();
   let t=`*${s.clinic}*\n${s.dr}, ${s.quals}\n\nPrescription for *${p.name}* (${ageAt(p,v.date)}/${p.sex}) · ${dmy(v.date)}\n`;
@@ -508,6 +568,7 @@ function waText(){
   if(v.advice.length)t+=`\n*Advice*\n`+v.advice.map(a=>'• '+a).join('\n')+'\n';
   if(v.testsAdvised)t+=`\nTests before next visit: ${v.testsAdvised}\n`;
   if(v.followUp)t+=`Next visit: *${dmy(v.followUp)}*\n`;
+  if(s.linksOnWa!==false){const L=myLinks();if(L.length)t+='\n'+L.map(x=>`${x[0]}: ${x[1]}`).join('\n')+'\n'}
   return t+`\n${s.phone}`;
 }
 
@@ -545,9 +606,9 @@ function parseReport(text){
 /* ---------- modals ---------- */
 function openModal(html,wide){$('#modal').className='modal'+(wide?' wide':'');$('#modal').innerHTML=html;$('#ov').hidden=false;const f=$('#modal').querySelector('[autofocus]');if(f)f.focus()}
 function closeModal(){$('#ov').hidden=true;$('#modal').innerHTML=''}
-function patientForm(p){
+function patientForm(p,note){
   p=p||{name:'',age:'',sex:'',phone:'',address:''};
-  openModal(`<h3>${p.id?'Edit patient':'New patient'}</h3>
+  openModal(`<h3>${p.id?'Edit patient':'New patient'}</h3>${note?`<div class="warn">${esc(note)}</div>`:''}
    <form id="pform" class="vit" style="grid-template-columns:1fr 1fr">
     <label class="f" style="grid-column:1/-1">Full name<input class="inp" id="pf_name" required autofocus value="${esc(p.name)}"></label>
     <label class="f">Age (years)<input class="inp" id="pf_age" inputmode="numeric" required value="${esc(p.age)}"></label>
@@ -577,7 +638,21 @@ function settingsForm(){
   openModal(`<h3>Clinic settings</h3><p class="hint">These print on the letterhead of every prescription.</p>
    ${F('dr','Doctor name')}${F('quals','Qualifications')}${F('reg','Registration number (as printed)')}${F('clinic','Clinic name')}${F('address','Clinic address')}${F('phone','Clinic phone')}${F('timings','Clinic timings')}
    <label class="f">Footer note<textarea class="inp" id="s_footer">${esc(s.footer)}</textarea></label>
+   <h3 style="font-size:16px;margin-top:6px">Your website &amp; app</h3>
+   <p class="hint">Shown to patients so they can book, read about the clinic, and get your app.</p>
+   ${F('website','Clinic website')}${F('appLink','Your app (Play Store / App Store link)')}${F('bookLink','Online appointment booking link')}
+   <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="s_linksOnRx" style="width:20px;height:20px" ${s.linksOnRx!==false?'checked':''}>Print these links and a QR code on the prescription</label>
+   <label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="s_linksOnWa" style="width:20px;height:20px" ${s.linksOnWa!==false?'checked':''}>Add these links to the WhatsApp message</label>
    <div class="mrow"><button class="btn" data-a="close">Cancel</button><button class="btn pri" data-a="saveSettings">Save</button></div>
+   <hr style="border:0;border-top:1px solid var(--line);width:100%">
+   <h3 style="font-size:16px">Connect your website or app</h3>
+   <p class="hint">Give this link pattern to whoever looks after your website or app. A “Start consultation” button built with it opens the patient here, or a filled-in New patient form if they are new.</p>
+   <code class="lk" id="lk_tpl">${esc(emrLinkBase())}#patient?name=NAME&amp;phone=MOBILE&amp;age=AGE&amp;sex=M_or_F</code>
+   <div class="row"><button class="btn sm" data-a="copyLink">Copy link pattern</button><span class="hint" id="lk_st"></span></div>
+   <p class="hint">Move your patient list across with a spreadsheet (CSV) file. Columns: Name, Age, Sex, Phone, Address.</p>
+   <div class="row"><label class="btn" for="imp_csv">Import patients (CSV)</label><input type="file" id="imp_csv" accept=".csv,text/csv" hidden>
+    <button class="btn" data-a="exportCsv">Export patient list (CSV)</button></div>
+   <div class="hint" id="csv_st" role="status"></div>
    <hr style="border:0;border-top:1px solid var(--line);width:100%">
    <h3 style="font-size:16px">Backup</h3>
    <p class="hint">All records live in this browser on this device. Make a backup copy regularly.</p>
@@ -585,6 +660,7 @@ function settingsForm(){
     <label class="btn" for="imp">Restore from a backup file</label><input type="file" id="imp" accept=".json,application/json" hidden></div>
    <div id="bk"></div>
    ${db.patients.some(p=>p.sample)?'<div class="row"><button class="btn" data-a="delSample">Remove the sample patient</button></div>':''}`);
+  $('#imp_csv').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#csv_st').textContent=importPatientsCSV(String(r.result))};r.readAsText(f);e.target.value=''});
   $('#imp').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.patients||!d.visits||!d.settings)throw 0;db=d;save();closeModal();cur={pid:null,vid:null,draft:null};renderList();renderEmpty()}catch(err){$('#bk').innerHTML='<div class="warn">That file is not a NephroRx backup.</div>'}};r.readAsText(f)});
 }
 function pasteForm(){
@@ -721,7 +797,13 @@ document.addEventListener('click',e=>{
      <div class="mrow"><button class="btn" data-a="close">Close</button></div>`);
     const go=$('#wa_go');if(go){const upd=()=>go.href=`https://wa.me/${ph}?text=${encodeURIComponent($('#wa_txt').value)}`;upd();$('#wa_txt').addEventListener('input',upd)}break}
   case 'copyWa':{const t=$('#wa_txt');navigator.clipboard&&navigator.clipboard.writeText(t.value).then(()=>$('#wa_st').textContent='Copied',()=>{t.select();$('#wa_st').textContent='Selected: press Ctrl+C or long-press to copy'});if(!navigator.clipboard){t.select()}break}
-  case 'saveSettings':['dr','quals','reg','clinic','address','phone','timings','footer'].forEach(k=>db.settings[k]=$('#s_'+k).value.trim());save();closeModal();break;
+  case 'saveSettings':['dr','quals','reg','clinic','address','phone','timings','footer','website','appLink','bookLink'].forEach(k=>db.settings[k]=$('#s_'+k).value.trim());
+    ['website','appLink','bookLink'].forEach(k=>db.settings[k]=cleanUrl(db.settings[k]));
+    db.settings.linksOnRx=$('#s_linksOnRx').checked;db.settings.linksOnWa=$('#s_linksOnWa').checked;save();closeModal();break;
+  case 'copyLink':{const t=$('#lk_tpl').textContent;const st=$('#lk_st');
+    if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>st.textContent='Copied',()=>{getSelection().selectAllChildren($('#lk_tpl'));st.textContent='Selected: copy it from the menu'});
+    else{getSelection().selectAllChildren($('#lk_tpl'))}break}
+  case 'exportCsv':offerFile('nephrorx-patients-'+today()+'.csv',patientsCSV(),'text/csv',$('#csv_st'));break;
   case 'export':{const json=JSON.stringify(db);const name='nephrorx-backup-'+today()+'.json';
     if(!framed){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download=name;a.click();$('#bk').innerHTML='<p class="hint">Saved '+esc(name)+' to your downloads.</p>'}
     else if(dl){dl.save({filename:name,data:json}).then(()=>$('#bk').innerHTML='<p class="hint">Backup saved: '+esc(name)+'</p>',err=>{$('#bk').innerHTML='<p class="hint">'+(err&&err.code==='declined'?'Backup not saved.':'Saving files is not available here.')+'</p>'})}
@@ -761,5 +843,6 @@ try{if(!framed&&navigator.storage&&navigator.storage.persist)navigator.storage.p
 renderList();
 if(!storageOK)setStatus('Browser storage is off');
 renderEmpty();
+handleLink();
 })();
 </script>

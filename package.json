@@ -1,6 +1,13 @@
 {
   "name": "nephrorx",
   "private": true,
-  "scripts": { "build": "sh build.sh", "test": "sh build.sh && node tests/smoke.js" },
-  "devDependencies": { "html2canvas": "1.4.1", "jspdf": "2.5.1" }
+  "scripts": {
+    "build": "sh build.sh",
+    "test": "sh build.sh && node tests/smoke.js"
+  },
+  "devDependencies": {
+    "html2canvas": "1.4.1",
+    "jspdf": "2.5.1",
+    "qrcode-generator": "^1.4.4"
+  }
 }

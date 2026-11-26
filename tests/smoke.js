@@ -10,6 +10,7 @@ for(const [name,dev] of views){
   const ctx=await b.newContext({...dev,acceptDownloads:true});
   await ctx.route(/cdnjs\.cloudflare\.com.*html2canvas/,r=>r.fulfill({body:fs.readFileSync(path.join(nm,'html2canvas/dist/html2canvas.min.js')),contentType:'text/javascript'}));
   await ctx.route(/cdnjs\.cloudflare\.com.*jspdf/,r=>r.fulfill({body:fs.readFileSync(path.join(nm,'jspdf/dist/jspdf.umd.min.js')),contentType:'text/javascript'}));
+  await ctx.route(/qrcode-generator/,r=>r.fulfill({body:fs.readFileSync(path.join(nm,'qrcode-generator/qrcode.js')),contentType:'text/javascript'}));
   await ctx.route(/fonts\.(googleapis|gstatic)/,r=>r.abort());
   const pg=await ctx.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
   const click=s=>dev.hasTouch?pg.tap(s):pg.click(s);
@@ -40,6 +41,30 @@ for(const [name,dev] of views){
   ok(/Ready/.test(await pg.textContent('#pdf_st')),'PDF created');
   // reload keeps data
   await pg.reload();ok(await pg.isVisible('text=Test Patient'),'data kept after reload');
+  if(name==='laptop'){
+    // links from the clinic website/app
+    await pg.goto(url+'#patient?name=Asha%20Rao&phone=%2B91%2090000%2011111&age=50&sex=female');
+    ok(await pg.inputValue('#pf_name')==='Asha Rao'&&await pg.inputValue('#pf_phone')==='9000011111','website link prefills New patient');
+    ok(!(await pg.evaluate(()=>location.hash)),'patient details removed from the address bar');
+    await click('#pf_consent');await click('#pform button[type=submit]');
+    await pg.evaluate(()=>{location.hash='#patient?phone=9000011111'});
+    await pg.waitForTimeout(200);
+    ok((await pg.textContent('.phead h1'))==='Asha Rao','website link opens an existing patient');
+    // website/app links + QR on the prescription and WhatsApp text
+    await click('.top [data-a=settings]');
+    await pg.fill('#s_website','www.example-clinic.in');await pg.fill('#s_bookLink','https://example-clinic.in/book');
+    // CSV import
+    await pg.setInputFiles('#imp_csv',{name:'p.csv',mimeType:'text/csv',buffer:Buffer.from('Name,Age,Gender,Mobile No,City\n"Kale, Sunita",62,Female,9822200000,Thane\nAsha Rao,50,F,9000011111,Thane\n,40,M,,\n')});
+    await pg.waitForFunction(()=>/Added/.test(document.querySelector('#csv_st').textContent));
+    ok(/Added 1 patient\..*Skipped 1 already.*Skipped 1 row/.test(await pg.textContent('#csv_st')),'CSV import: '+await pg.textContent('#csv_st'));
+    await click('#modal [data-a=saveSettings]');
+    ok(await pg.isVisible('text=Kale, Sunita'),'imported patient listed');
+    await click('.actions [data-a=preview]');
+    ok(await pg.isVisible('.paper .links .qr img'),'booking QR code on prescription');
+    ok(/example-clinic\.in\/book/.test(await pg.textContent('.paper .links')),'booking link printed');
+    await click('#modal [data-a=close]');await click('.actions [data-a=whatsapp]');
+    ok(/Website: https:\/\/www\.example-clinic\.in/.test(await pg.inputValue('#wa_txt')),'links in WhatsApp message');
+  }
   ok(errs.length===0,'no script errors '+errs.join('; '));
   await ctx.close();
 }

@@ -10,6 +10,7 @@ result in plain language without code jargon, and ask only when a decision is ge
 - `manifest.webmanifest`, `icon-*.png` — home-screen app files.
 - `tests/smoke.js` — end-to-end test on laptop, iPad portrait/landscape and phone.
 - `BACKOFFICE.md` — the owner's routine (backups, consent, security).
+- `INTEGRATION.md` — how the owner's existing website/app connects (patient link `#patient?...`, CSV import/export). Keep it in sync with the code.
 
 ## Every change
 1. Edit `app.html`.
