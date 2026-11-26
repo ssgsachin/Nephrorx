@@ -1,0 +1,684 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>NephroRx Prescription Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: clinic-desk split — patient list rail on the left, one scrolling visit sheet on the right; collapses to one column on phones */
+:root{
+  --bg:#f3f4f2; --panel:#ffffff; --ink:#18222b; --muted:#5d6872; --line:#dbe0dd; --soft:#eef0ee;
+  --accent:#8c2f47; --accent-ink:#ffffff; --accent-soft:#f6e9ed;
+  --hi:#b6420f; --lo:#1f55c7; --ok:#2f7a4f;
+  --paper:#ffffff; --paper-ink:#111111; --paper-line:#c9c9c9;
+  --f-head:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-data:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121619; --panel:#1a2025; --ink:#e5e9ec; --muted:#9aa5ae; --line:#2b333a; --soft:#20272d;
+  --accent:#e0839b; --accent-ink:#1a0a10; --accent-soft:#3a2229;
+  --hi:#f08a5d; --lo:#8db3ff; --ok:#79c79a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121619; --panel:#1a2025; --ink:#e5e9ec; --muted:#9aa5ae; --line:#2b333a; --soft:#20272d;
+  --accent:#e0839b; --accent-ink:#1a0a10; --accent-soft:#3a2229;
+  --hi:#f08a5d; --lo:#8db3ff; --ok:#79c79a; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--f-head);text-wrap:balance;margin:0}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);border-bottom:1px solid var(--line);
+  padding-block:10px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+.brand{display:flex;align-items:baseline;gap:8px;margin-right:auto}
+.brand b{font-family:var(--f-head);font-size:20px;letter-spacing:.01em}
+.brand b span{color:var(--accent)}
+.brand small{color:var(--muted);font-size:12px}
+.btn{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+.btn.sm{padding:4px 9px;font-size:13px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--muted)}
+.btn.ghost:hover{color:var(--ink)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.layout{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:calc(100vh - 60px)}
+.side{border-right:1px solid var(--line);background:var(--panel);padding:14px;display:flex;flex-direction:column;gap:10px}
+.main{padding-block:16px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));min-width:0}
+.inp{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:7px 9px;width:100%}
+.inp:focus{border-color:var(--accent);outline:none}
+textarea.inp{resize:vertical;min-height:60px}
+.plist{display:flex;flex-direction:column;gap:2px;overflow:auto}
+.pitem{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:8px 10px;border-radius:6px;cursor:pointer;border:1px solid transparent;text-align:left;background:none}
+.pitem:hover{background:var(--soft)}
+.pitem.on{background:var(--accent-soft);border-color:var(--accent)}
+.pitem .n{font-weight:600}
+.pitem .m{grid-column:1/-1;color:var(--muted);font-size:12px;font-family:var(--f-data)}
+.tag{font-size:11px;padding:1px 6px;border-radius:10px;background:var(--soft);color:var(--muted);align-self:center;letter-spacing:.03em}
+.sheet{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px 16px}
+.card>h2{font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card>h2 .sp{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;text-transform:none;letter-spacing:0}
+.phead{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
+.phead h1{font-size:24px}
+.meta{font-family:var(--f-data);color:var(--muted);font-size:13px}
+.visits{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:center}
+.chip{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:4px 11px;cursor:pointer;font-size:13px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.vit{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px}
+label.f{display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+label.f .inp{color:var(--ink);font-size:14px}
+.hint{color:var(--muted);font-size:12px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table.labs{border-collapse:collapse;font-variant-numeric:tabular-nums;min-width:100%}
+table.labs th,table.labs td{border-bottom:1px solid var(--line);padding:0;text-align:left}
+table.labs thead th{background:var(--soft);font-weight:600;font-size:12px;padding:6px 8px;white-space:nowrap;position:sticky;top:0}
+table.labs th.tn{position:sticky;left:0;background:var(--panel);z-index:1;padding:5px 10px;font-weight:500;white-space:nowrap;min-width:150px;border-right:1px solid var(--line)}
+table.labs thead th.tn{background:var(--soft);z-index:2}
+table.labs th.tn small{color:var(--muted);font-weight:400;margin-left:4px;font-family:var(--f-data);font-size:11px}
+table.labs tr.grp th{background:var(--bg);color:var(--accent);font-size:11px;text-transform:uppercase;letter-spacing:.08em;padding:4px 10px;position:sticky;left:0}
+table.labs td input{width:84px;border:0;background:transparent;padding:6px 8px;font-family:var(--f-data);font-size:13px}
+table.labs td input:focus{background:var(--accent-soft);outline:none}
+table.labs td.calc{font-family:var(--f-data);font-size:13px;padding:6px 8px;color:var(--muted)}
+td.hi input,td.hi{color:var(--hi)!important;font-weight:600}
+td.lo input,td.lo{color:var(--lo)!important;font-weight:600}
+td.new input{background:var(--accent-soft)}
+.colh{display:flex;align-items:center;gap:6px}
+.x{border:0;background:none;color:var(--muted);cursor:pointer;padding:0 3px;font-size:13px}
+.x:hover{color:var(--hi)}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rx{width:100%;border-collapse:collapse}
+.rx td{padding:4px 4px;border-bottom:1px solid var(--line);vertical-align:middle}
+.rx td.no{font-family:var(--f-data);color:var(--muted);width:24px}
+.rx input,.rx select{border:1px solid transparent;background:transparent;border-radius:4px;padding:5px 6px;width:100%}
+.rx input:hover,.rx select:hover{border-color:var(--line)}
+.rx input:focus,.rx select:focus{border-color:var(--accent);outline:none}
+.rx .drug{font-weight:600;min-width:200px}
+.sugg{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.sugg button{border:1px dashed var(--line);background:var(--panel);border-radius:6px;padding:4px 9px;cursor:pointer;font-size:13px}
+.sugg button:first-child{border-style:solid;border-color:var(--accent)}
+.actions{position:sticky;bottom:0;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;box-shadow:0 -4px 16px rgba(0,0,0,.06)}
+.actions .st{margin-right:auto;color:var(--muted);font-size:12px}
+.overlay{position:fixed;inset:0;background:rgba(10,14,18,.5);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow:auto;
+  padding-block:calc(env(safe-area-inset-top,0px) + 24px) 24px;padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.modal{background:var(--panel);border-radius:10px;padding:18px;width:100%;max-width:560px;display:flex;flex-direction:column;gap:12px}
+.modal.wide{max-width:880px;background:var(--soft)}
+.modal h3{font-size:19px}
+.mrow{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.seg{display:flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;width:max-content}
+.seg button{border:0;background:var(--panel);padding:7px 16px;cursor:pointer;border-right:1px solid var(--line)}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.warn{background:var(--accent-soft);border:1px solid var(--accent);border-radius:6px;padding:8px 12px;font-size:13px}
+.empty{max-width:640px;margin:40px auto;text-align:left;display:flex;flex-direction:column;gap:14px}
+.empty h1{font-size:30px}
+.empty ol{margin:0;padding-left:20px;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+.back{display:none}
+/* Paper — always light, it is a printed page */
+.paper{background:var(--paper);color:var(--paper-ink);width:100%;max-width:794px;margin:0 auto;padding:28px 34px;font-size:12.5px;line-height:1.4;box-shadow:0 2px 12px rgba(0,0,0,.15);font-family:var(--f-body)}
+.paper .lh{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid var(--paper-ink);padding-bottom:10px;flex-wrap:wrap}
+.paper .lh .dr{font-family:var(--f-head);font-size:21px;font-weight:700}
+.paper .lh .r{text-align:right}
+.paper .pt{display:flex;flex-wrap:wrap;gap:4px 22px;padding:8px 0;border-bottom:1px solid var(--paper-line)}
+.paper .pt b{font-weight:600}
+.paper h4{font-family:var(--f-head);font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin:12px 0 4px}
+.paper table{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}
+.paper th,.paper td{border:1px solid var(--paper-line);padding:3px 6px;text-align:left;vertical-align:top}
+.paper th{background:#f1f1f1;font-weight:600}
+.paper .lt td{font-family:var(--f-data);font-size:11.5px}
+.paper .lt td:first-child{font-family:var(--f-body)}
+.paper .rxsym{font-family:Georgia,serif;font-size:22px;font-weight:700;margin:12px 0 2px}
+.paper .legend{font-size:10.5px;color:#444;margin-top:3px}
+.paper ul{margin:2px 0;padding-left:18px}
+.paper .sig{display:flex;justify-content:space-between;align-items:flex-end;margin-top:26px;gap:20px;flex-wrap:wrap}
+.paper .sig .r{text-align:right;border-top:1px solid var(--paper-ink);padding-top:4px;min-width:200px}
+.paper .foot{border-top:1px solid var(--paper-line);margin-top:14px;padding-top:6px;font-size:10.5px;color:#444}
+#printArea{display:none}
+@media (max-width:820px){
+  .layout{grid-template-columns:1fr}
+  .layout.has-p .side{display:none}
+  .layout:not(.has-p) .main{display:none}
+  .side{border-right:0;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .back{display:inline-block}
+  .grid2{grid-template-columns:1fr}
+  .brand small{display:none}
+  .paper{padding:18px}
+}
+@media print{
+  @page{size:A4;margin:10mm}
+  body{background:#fff}
+  body::before,.top,.layout,.overlay{display:none!important}
+  #printArea{display:block!important}
+  #printArea .paper{box-shadow:none;padding:0;max-width:none}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head><body>
+
+<header class="top">
+  <div class="brand"><b>Nephro<span>Rx</span></b><small>Prescription desk</small></div>
+  <button class="btn pri" data-a="newPatient">+ New patient</button>
+  <button class="btn" data-a="settings">Clinic settings</button>
+</header>
+<div class="layout" id="layout">
+  <aside class="side">
+    <input class="inp" id="search" placeholder="Search name, phone or UHID" autocomplete="off">
+    <div class="hint" id="pcount"></div>
+    <div class="plist" id="plist"></div>
+  </aside>
+  <main class="main" id="main"></main>
+</div>
+<div id="printArea"></div>
+<div class="overlay" id="ov" hidden><div class="modal" id="modal"></div></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- reference data ---------- */
+const TESTS=[
+ {g:'Renal',k:'cr',l:'S. Creatinine',u:'mg/dL',lo:0.6,hi:1.2},
+ {g:'Renal',k:'egfr',l:'eGFR (auto)',u:'mL/min',calc:true,lo:60},
+ {g:'Renal',k:'urea',l:'Blood urea',u:'mg/dL',lo:15,hi:40},
+ {g:'Renal',k:'ua',l:'Uric acid',u:'mg/dL',lo:3.5,hi:7.2},
+ {g:'Renal',k:'uacr',l:'Urine ACR',u:'mg/g',hi:30},
+ {g:'Renal',k:'upcr',l:'Urine PCR',u:'g/g',hi:0.2},
+ {g:'Electrolytes',k:'na',l:'Sodium',u:'mEq/L',lo:135,hi:145},
+ {g:'Electrolytes',k:'k',l:'Potassium',u:'mEq/L',lo:3.5,hi:5.0},
+ {g:'Electrolytes',k:'hco3',l:'Bicarbonate',u:'mEq/L',lo:22,hi:29},
+ {g:'Bone & mineral',k:'ca',l:'Calcium',u:'mg/dL',lo:8.5,hi:10.5},
+ {g:'Bone & mineral',k:'po4',l:'Phosphorus',u:'mg/dL',lo:2.5,hi:4.5},
+ {g:'Bone & mineral',k:'pth',l:'iPTH',u:'pg/mL',lo:15,hi:65},
+ {g:'Bone & mineral',k:'vitd',l:'25-OH Vit D',u:'ng/mL',lo:30,hi:100},
+ {g:'Anaemia & general',k:'hb',l:'Haemoglobin',u:'g/dL',lo:12,hi:17},
+ {g:'Anaemia & general',k:'ferr',l:'Ferritin',u:'ng/mL',lo:100},
+ {g:'Anaemia & general',k:'tsat',l:'TSAT',u:'%',lo:20,hi:50},
+ {g:'Anaemia & general',k:'alb',l:'S. Albumin',u:'g/dL',lo:3.5,hi:5.2},
+ {g:'Anaemia & general',k:'hba1c',l:'HbA1c',u:'%',hi:7},
+ {g:'Transplant',k:'tac',l:'Tacrolimus trough',u:'ng/mL'}
+];
+/* aliases for the paste-a-report reader; order matters on ties */
+const ALIAS=[
+ ['hba1c',/\b(hba1c|a1c|glycated h(a)?emoglobin|glycosylated h(a)?emoglobin)\b/i],
+ ['uacr',/\b(uacr|acr|(urine\s*)?albumin\s*[\/-]?\s*creatinine\s*ratio|microalbumin\w*)/i],
+ ['upcr',/\b(upcr|pcr|(urine\s*)?protein\s*[\/-]?\s*creatinine\s*ratio)/i],
+ ['bun',/\b(bun|blood\s*urea\s*nitrogen|urea\s*nitrogen)\b/i],
+ ['cr',/\b(s(erum)?\.?\s*)?creat(inine)?\b|\bs\.?\s*cr\b|\bcr\b/i],
+ ['urea',/\b(blood\s*)?urea\b/i],
+ ['ua',/\buric\s*acid\b|\bs\.?\s*ua\b/i],
+ ['na',/\bsodium\b|\bna\+?(?=[\s:=\d])/i],
+ ['k',/\bpotassium\b|\bk\+?(?=[\s:=\d])/i],
+ ['hco3',/\bbicarb(onate)?\b|\bhco3-?|\btco2\b/i],
+ ['ca',/\b(total\s*)?calcium\b|\bca\b/i],
+ ['po4',/\bphosph(orus|ate)?\b|\bpo4\b|\bphos\b/i],
+ ['pth',/\b(i?pth|parathyroid\s*hormone|parathormone)\b/i],
+ ['vitd',/25\s*-?\s*(oh|hydroxy)\s*vit(amin)?\.?\s*d\s*[23]?|vit(amin)?\.?\s*d\s*[23]?(\s*\(?\s*25\s*-?\s*(oh|hydroxy)\s*\)?)?/i],
+ ['ferr',/\bferritin\b/i],
+ ['tsat',/\btsat\b|transferrin\s*sat(uration)?/i],
+ ['alb',/\b(s(erum)?\.?\s*)?albumin\b|\balb\b/i],
+ ['hb',/\bh(a)?emoglobin\b|\bhb\b|\bhgb\b/i],
+ ['tac',/\btacrolimus\b|\bfk\s*-?\s*506\b|\btac\b/i]
+];
+const FORMULARY=[
+ ['Tab. Amlodipine 5 mg','1-0-0','After food','1 month'],
+ ['Tab. Cilnidipine 10 mg','1-0-0','After food','1 month'],
+ ['Tab. Telmisartan 40 mg','1-0-0','After food','1 month'],
+ ['Tab. Losartan 50 mg','1-0-0','After food','1 month'],
+ ['Tab. Metoprolol succinate ER 25 mg','1-0-0','After food','1 month'],
+ ['Tab. Prazosin XL 2.5 mg','0-0-1','At bedtime','1 month'],
+ ['Tab. Clonidine 0.1 mg','1-0-1','After food','1 month'],
+ ['Tab. Labetalol 100 mg','1-0-1','After food','1 month'],
+ ['Tab. Torsemide 10 mg','1-0-0','After food','1 month'],
+ ['Tab. Furosemide 40 mg','1-0-0','After food','1 month'],
+ ['Tab. Dapagliflozin 10 mg','1-0-0','After food','1 month'],
+ ['Tab. Empagliflozin 10 mg','1-0-0','After food','1 month'],
+ ['Tab. Finerenone 10 mg','1-0-0','After food','1 month'],
+ ['Tab. Linagliptin 5 mg','1-0-0','After food','1 month'],
+ ['Tab. Atorvastatin 10 mg','0-0-1','At bedtime','1 month'],
+ ['Tab. Rosuvastatin 10 mg','0-0-1','At bedtime','1 month'],
+ ['Tab. Sodium bicarbonate 500 mg','1-1-1','After food','1 month'],
+ ['Tab. Febuxostat 40 mg','1-0-0','After food','1 month'],
+ ['Tab. Calcium acetate 667 mg','1-1-1','With meals','1 month'],
+ ['Tab. Sevelamer carbonate 800 mg','1-1-1','With meals','1 month'],
+ ['Cap. Calcitriol 0.25 mcg','0-0-1','After food','1 month'],
+ ['Tab. Cinacalcet 30 mg','0-1-0','With meals','1 month'],
+ ['Sachet Cholecalciferol 60,000 IU','Once weekly','After food','8 weeks'],
+ ['Tab. Ferrous ascorbate 100 mg + Folic acid 1.5 mg','0-1-0','After food','1 month'],
+ ['Tab. Vitamin B-complex with folic acid','1-0-0','After food','1 month'],
+ ['Tab. Ketoanalogues of essential amino acids','2-2-2','With meals','1 month'],
+ ['Tab. Desidustat 100 mg','Thrice weekly','After food','1 month'],
+ ['Inj. Erythropoietin 4000 IU s.c.','Twice weekly','—','1 month'],
+ ['Inj. Iron sucrose 100 mg i.v. in 100 mL NS','Once weekly','—','5 doses'],
+ ['Sachet Calcium polystyrene sulfonate 15 g','1-0-1','After food','5 days'],
+ ['Sachet Sodium zirconium cyclosilicate 5 g','1-0-0','After food','1 month'],
+ ['Cap. Tacrolimus 1 mg','1-0-1','Empty stomach','Continue'],
+ ['Tab. Mycophenolate mofetil 500 mg','1-0-1','After food','Continue'],
+ ['Tab. Mycophenolate sodium 360 mg','1-0-1','After food','Continue'],
+ ['Tab. Prednisolone 5 mg','1-0-0','After food','Continue'],
+ ['Tab. Valganciclovir 450 mg','1-0-0','After food','3 months'],
+ ['Tab. Cotrimoxazole 480 mg','0-0-1','After food','6 months'],
+ ['Tab. Hydroxychloroquine 200 mg','1-0-0','After food','1 month'],
+ ['Tab. Pantoprazole 40 mg','1-0-0','Before food','1 month'],
+ ['Tab. Potassium citrate 1080 mg','1-0-1','After food','3 months'],
+ ['Tab. Tamsulosin 0.4 mg','0-0-1','At bedtime','15 days'],
+ ['Tab. Nitrofurantoin 100 mg','1-0-1','After food','5 days']
+];
+const FREQS=['1-0-0','0-1-0','0-0-1','1-0-1','1-1-1','1-1-1-1','2-2-2','½-0-0','SOS','Once weekly','Twice weekly','Thrice weekly','Alternate days'];
+const TIMINGS=['After food','Before food','With meals','At bedtime','Empty stomach','—'];
+const DURS=['3 days','5 days','7 days','10 days','15 days','1 month','2 months','3 months','6 months','8 weeks','5 doses','Continue'];
+const DIAG=['CKD stage 3a','CKD stage 3b','CKD stage 4','CKD stage 5','CKD 5D on MHD','Diabetic kidney disease','Hypertension','Type 2 DM','Renal transplant recipient','Nephrotic syndrome','IgA nephropathy','AKI','Renal calculi','UTI','Hyperkalaemia','Anaemia of CKD','CKD-MBD'];
+const ADVICE=['Salt less than 5 g a day (one level teaspoon)','Fluid restriction: 1 to 1.5 litres a day','Low potassium diet: avoid coconut water, fruit juices, dry fruits','Do not take painkillers (diclofenac, ibuprofen, nimesulide)','Avoid herbal or ayurvedic medicines without asking','Check BP daily and bring the record','Check sugar fasting and after meals','Protein 0.8 g per kg body weight a day','Drink 3 litres of water a day','Walk 30 minutes a day'];
+const TEMPLATES0=[
+ {id:'t1',name:'CKD 4: MBD + anaemia',rx:[['Tab. Sodium bicarbonate 500 mg','1-1-1','After food','1 month'],['Tab. Calcium acetate 667 mg','1-1-1','With meals','1 month'],['Cap. Calcitriol 0.25 mcg','0-0-1','After food','1 month'],['Tab. Ferrous ascorbate 100 mg + Folic acid 1.5 mg','0-1-0','After food','1 month'],['Tab. Febuxostat 40 mg','1-0-0','After food','1 month']],advice:[0,2,3]},
+ {id:'t2',name:'Transplant maintenance',rx:[['Cap. Tacrolimus 1 mg','1-0-1','Empty stomach','Continue'],['Tab. Mycophenolate mofetil 500 mg','1-0-1','After food','Continue'],['Tab. Prednisolone 5 mg','1-0-0','After food','Continue'],['Tab. Cotrimoxazole 480 mg','0-0-1','After food','6 months'],['Tab. Pantoprazole 40 mg','1-0-0','Before food','1 month']],advice:[3,4,8]}
+];
+
+/* ---------- storage ---------- */
+const KEY='nephrorx-v1';
+let storageOK=true, saveT=null;
+function load(){try{const s=localStorage.getItem(KEY);return s?JSON.parse(s):null}catch(e){storageOK=false;return null}}
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify(db));setStatus('Saved')}catch(e){storageOK=false;setStatus('Not saved: browser storage is off')}},300)}
+const framed=(()=>{try{return window.self!==window.top}catch(e){return true}})();
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=v=>String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+function today(){const d=new Date();return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
+function addDays(iso,n){const d=new Date(iso+'T00:00:00');d.setDate(d.getDate()+n);return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)}
+function dmy(iso,short){if(!iso)return '';const [y,m,d]=iso.split('-');return short?`${d}/${m}/${y.slice(2)}`:`${d}/${m}/${y}`}
+function validISO(s){return /^\d{4}-\d{2}-\d{2}$/.test(s)&&!isNaN(new Date(s+'T00:00:00'))}
+function ageAt(p,iso){const base=Number(p.age);if(!base)return 0;const yrs=(new Date(iso)-new Date(p.createdAt.slice(0,10)))/(365.25*864e5);return Math.max(0,Math.floor(base+(yrs>0?yrs:0)))}
+function egfr(cr,age,sex){cr=parseFloat(cr);if(!cr||!age||(sex!=='M'&&sex!=='F'))return '';
+  const f=sex==='F',k=f?0.7:0.9,a=f?-0.241:-0.302;
+  const v=142*Math.pow(Math.min(cr/k,1),a)*Math.pow(Math.max(cr/k,1),-1.2)*Math.pow(0.9938,age)*(f?1.012:1);return String(Math.round(v))}
+function flag(t,v){const n=parseFloat(String(v).replace(/[<>]/g,''));if(isNaN(n))return '';if(t.hi!=null&&n>t.hi)return 'hi';if(t.lo!=null&&n<t.lo)return 'lo';return ''}
+function allTests(){return TESTS.concat((db.settings.customTests||[]).map(c=>({g:'Other',k:c.k,l:c.l,u:c.u||''})))}
+function labVal(p,date,k){if(k==='egfr'){const c=(p.labs[date]||{}).cr;return egfr(c,ageAt(p,date),p.sex)}return (p.labs[date]||{})[k]||''}
+function freqText(f){const m={'1-0-0':'Morning','0-1-0':'Afternoon','0-0-1':'Night','1-0-1':'Morning & night','1-1-1':'Three times','1-1-1-1':'Four times','2-2-2':'2 tabs three times','½-0-0':'Half tab morning'};return m[f]||''}
+
+/* ---------- data ---------- */
+function seed(){
+  const t=today(), c=new Date().toISOString();
+  const p={id:'sample1',uhid:'NR-00001',name:'Ramesh Patil',age:58,sex:'M',phone:'9800000000',address:'Thane (W)',createdAt:addDays(t,-90)+'T09:00:00Z',sample:true,
+    labs:{[addDays(t,-90)]:{cr:'2.4',urea:'78',k:'5.1',na:'138',hb:'10.1',hco3:'19',ca:'8.6',po4:'4.9',hba1c:'7.8',uacr:'640'},
+          [addDays(t,-45)]:{cr:'2.6',urea:'84',k:'5.4',na:'137',hb:'9.8',hco3:'20',pth:'168',vitd:'17'},
+          [addDays(t,-2)]:{cr:'2.7',urea:'90',k:'5.6',na:'136',hb:'9.4',hco3:'18',ca:'8.4',po4:'5.2',ua:'8.1',alb:'3.6'}}};
+  const v={id:'sv1',patientId:'sample1',date:addDays(t,-45),vitals:{bp:'150/90',pulse:'82',wt:'72',ht:'168'},complaints:'Pedal oedema, reduced appetite',
+    diagnosis:['CKD stage 4','Diabetic kidney disease','Hypertension'],
+    rx:[['Tab. Telmisartan 40 mg','1-0-0','After food','1 month'],['Tab. Amlodipine 5 mg','1-0-0','After food','1 month'],['Tab. Torsemide 10 mg','1-0-0','After food','1 month'],['Tab. Sodium bicarbonate 500 mg','1-1-1','After food','1 month'],['Tab. Linagliptin 5 mg','1-0-0','After food','1 month']].map(r=>({drug:r[0],freq:r[1],timing:r[2],dur:r[3],note:''})),
+    advice:[ADVICE[0],ADVICE[2],ADVICE[3]],testsAdvised:'S. creatinine, electrolytes, CBC, iPTH',followUp:addDays(t,-15),notes:'',updatedAt:c};
+  return {v:1,settings:{dr:'Dr. Your Name',quals:'MD (Medicine), DM (Nephrology)',reg:'Reg. No. MMC 00000',clinic:'Your Kidney Clinic',address:'Shop 1, Example Road, Thane (W) 400601',phone:'+91 98000 00000',timings:'Mon–Sat 10 am – 1 pm, 6 – 9 pm',footer:'For emergencies call the clinic number. Bring this prescription and all reports on your next visit.',nextNo:2,customTests:[],myDrugs:[],templates:TEMPLATES0},
+    patients:[p],visits:[v]};
+}
+let db=load()||seed();
+db.settings.templates=db.settings.templates||TEMPLATES0;
+let cur={pid:null,vid:null,draft:null};
+let stage={}; // pasted values awaiting confirmation: {date:{k:true}}
+
+const P=id=>db.patients.find(p=>p.id===id);
+const visitsOf=pid=>db.visits.filter(v=>v.patientId===pid).sort((a,b)=>b.date.localeCompare(a.date)||(b.updatedAt||'').localeCompare(a.updatedAt||''));
+function curVisit(){return cur.draft||db.visits.find(v=>v.id===cur.vid)}
+function touchVisit(){const v=curVisit();v.updatedAt=new Date().toISOString();
+  if(cur.draft){db.visits.push(cur.draft);cur.vid=cur.draft.id;cur.draft=null;renderVisitChips();renderList()}
+  save()}
+function newDraft(pid){return {id:uid(),patientId:pid,date:today(),vitals:{},complaints:'',diagnosis:[],rx:[],advice:[],testsAdvised:'',followUp:'',notes:''}}
+
+/* ---------- patient list ---------- */
+function renderList(){
+  const q=$('#search').value.trim().toLowerCase();
+  const last=pid=>(visitsOf(pid)[0]||{}).date||'';
+  const ps=db.patients.filter(p=>!q||(p.name+' '+p.phone+' '+p.uhid).toLowerCase().includes(q))
+    .sort((a,b)=>(last(b.id)||b.createdAt).localeCompare(last(a.id)||a.createdAt));
+  $('#pcount').textContent=`${db.patients.length} patient${db.patients.length===1?'':'s'}${q?` · ${ps.length} match`:''}`;
+  $('#plist').innerHTML=ps.map(p=>`<button class="pitem${p.id===cur.pid?' on':''}" data-a="openP" data-id="${p.id}">
+    <span class="n">${esc(p.name)}</span>${p.sample?'<span class="tag">SAMPLE</span>':'<span></span>'}
+    <span class="m">${esc(p.uhid)} · ${esc(p.age)}/${esc(p.sex)} · ${esc(p.phone)}${last(p.id)?' · last '+dmy(last(p.id),1):''}</span></button>`).join('')||'<div class="hint">No patient found. Use “New patient”.</div>';
+}
+
+/* ---------- main sheet ---------- */
+function renderEmpty(){
+  $('#layout').classList.remove('has-p');
+  $('#main').innerHTML=`<div class="empty"><h1>Start a prescription</h1>
+  <p>Pick a patient on the left, or register a new one. Every change saves by itself.</p>
+  <ol><li>Register the patient: name, age, sex, phone.</li><li>Type report values into the investigation grid, or paste the report text.</li><li>Add medicines from the list, or copy the last prescription.</li><li>Preview, print, and send to the patient on WhatsApp.</li></ol>
+  <div class="row"><button class="btn pri" data-a="newPatient">+ New patient</button><button class="btn" data-a="openP" data-id="${db.patients[0]?db.patients[0].id:''}">Open the sample patient</button></div>
+  ${storageOK?'':'<div class="warn">This browser is blocking storage, so data will be lost when you close the page.</div>'}</div>`;
+}
+function openPatient(pid,vid){
+  cur.pid=pid;const vs=visitsOf(pid);
+  if(vid){cur.vid=vid;cur.draft=null}
+  else{const t=vs.find(v=>v.date===today());if(t){cur.vid=t.id;cur.draft=null}else{cur.vid=null;cur.draft=newDraft(pid)}}
+  stage={};renderList();renderSheet();
+}
+function renderVisitChips(){
+  const el=$('#vchips');if(!el)return;const v=curVisit();
+  el.innerHTML='<span class="hint">Visits:</span>'+visitsOf(cur.pid).map(x=>`<button class="chip${x.id===v.id?' on':''}" data-a="openV" data-id="${x.id}">${dmy(x.date)}</button>`).join('')+
+   (cur.draft?'<span class="chip on">New visit (today)</span>':`<button class="chip" data-a="newVisit">+ New visit</button>`);
+}
+function renderSheet(){
+  const p=P(cur.pid),v=curVisit();if(!p){renderEmpty();return}
+  $('#layout').classList.add('has-p');
+  const tpl=db.settings.templates.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('');
+  $('#main').innerHTML=`<div class="sheet">
+  <section class="card">
+    <div class="phead"><button class="btn sm back" data-a="back">← Patients</button>
+      <h1>${esc(p.name)}</h1><span class="meta">${esc(p.uhid)} · ${esc(p.age)} y / ${esc(p.sex)} · ${esc(p.phone)}${p.address?' · '+esc(p.address):''}</span>
+      ${p.sample?'<span class="tag">SAMPLE PATIENT</span>':''}
+      <button class="btn sm ghost" data-a="editPatient">Edit details</button></div>
+    <div class="visits" id="vchips"></div>
+  </section>
+  <section class="card"><h2>Visit &amp; vitals</h2>
+    <div class="vit">
+      <label class="f">Visit date<input class="inp" type="date" id="v_date" data-f="date" value="${esc(v.date)}"></label>
+      <label class="f">BP (mmHg)<input class="inp" id="v_bp" data-f="vitals.bp" placeholder="130/80" value="${esc(v.vitals.bp)}"></label>
+      <label class="f">Pulse (/min)<input class="inp" id="v_pulse" inputmode="numeric" data-f="vitals.pulse" value="${esc(v.vitals.pulse)}"></label>
+      <label class="f">Weight (kg)<input class="inp" id="v_wt" inputmode="decimal" data-f="vitals.wt" value="${esc(v.vitals.wt)}"></label>
+      <label class="f">Height (cm)<input class="inp" id="v_ht" inputmode="decimal" data-f="vitals.ht" value="${esc(v.vitals.ht)}"></label>
+      <label class="f">SpO₂ (%)<input class="inp" id="v_spo2" inputmode="numeric" data-f="vitals.spo2" value="${esc(v.vitals.spo2)}"></label>
+      <label class="f">RBS (mg/dL)<input class="inp" id="v_rbs" inputmode="numeric" data-f="vitals.rbs" value="${esc(v.vitals.rbs)}"></label>
+      <label class="f">BMI<input class="inp" id="v_bmi" readonly tabindex="-1" value="${bmi(v)}"></label>
+    </div>
+  </section>
+  <section class="card"><h2>Complaints &amp; diagnosis</h2>
+    <div class="grid2">
+      <label class="f">Chief complaints<textarea class="inp" id="v_cc" data-f="complaints" placeholder="e.g. Swelling of feet for 2 weeks">${esc(v.complaints)}</textarea></label>
+      <label class="f">Clinical notes (not printed)<textarea class="inp" id="v_notes" data-f="notes">${esc(v.notes)}</textarea></label>
+    </div>
+    <div style="margin-top:10px" class="chips" id="dchips"></div>
+    <div class="row" style="margin-top:8px"><input class="inp" id="dx_add" placeholder="Type another diagnosis and press Enter" style="max-width:380px"></div>
+  </section>
+  <section class="card"><h2>Investigations <span class="hint" style="text-transform:none;letter-spacing:0">each column is one report date · Enter moves down</span>
+    <span class="sp"><button class="btn sm" data-a="paste">Paste report text</button></span></h2>
+    <div class="row" style="margin-bottom:8px"><label class="f" style="flex-direction:row;align-items:center;gap:6px">Report date <input class="inp" type="date" id="lab_date" value="${today()}" style="width:auto"></label>
+      <button class="btn sm" data-a="addCol">Add column</button>
+      <span style="flex:1"></span>
+      <input class="inp" id="ct_name" placeholder="Add a test row, e.g. C3 (mg/dL)" style="max-width:240px"><button class="btn sm" data-a="addTest">Add row</button></div>
+    <div class="scroll" id="labwrap"></div>
+  </section>
+  <section class="card"><h2>℞ Medicines
+    <span class="sp"><button class="btn sm" data-a="copyLast">Copy last prescription</button>
+    <select class="inp" id="tpl" style="width:auto;padding:4px 8px"><option value="">Apply template…</option>${tpl}</select>
+    <button class="btn sm" data-a="saveTpl">Save as template</button></span></h2>
+    <div class="scroll" style="border:0"><table class="rx" id="rxt"></table></div>
+    <div style="margin-top:8px"><input class="inp" id="drug_q" placeholder="Type a medicine (e.g. telmi, bicarb, tacro) and press Enter" autocomplete="off"></div>
+    <div class="sugg" id="sugg"></div>
+  </section>
+  <section class="card"><h2>Advice &amp; follow-up</h2>
+    <div class="chips" id="achips"></div>
+    <div class="row" style="margin-top:8px"><input class="inp" id="adv_add" placeholder="Type other advice and press Enter" style="max-width:480px"></div>
+    <div class="grid2" style="margin-top:12px">
+      <label class="f">Tests before next visit<input class="inp" id="v_tests" data-f="testsAdvised" value="${esc(v.testsAdvised)}" placeholder="S. creatinine, electrolytes, CBC"></label>
+      <label class="f">Next visit<div class="row"><input class="inp" type="date" id="v_fu" data-f="followUp" value="${esc(v.followUp)}" style="width:auto">
+        ${[7,15,30,60,90].map(n=>`<button class="btn sm" data-a="fu" data-n="${n}">${n<30?n+' d':n/30+' m'}</button>`).join('')}</div></label>
+    </div>
+  </section>
+  <div class="actions"><span class="st" id="status">${cur.draft?'New visit: starts saving when you type':'Saved'}</span>
+    <button class="btn" data-a="whatsapp">Send on WhatsApp</button>
+    <button class="btn pri" data-a="preview">Preview prescription</button></div>
+  </div>`;
+  renderVisitChips();renderDx();renderLabs();renderRx();renderAdvice();renderSugg('');
+}
+function bmi(v){const w=parseFloat(v.vitals.wt),h=parseFloat(v.vitals.ht)/100;return w&&h?(w/(h*h)).toFixed(1):''}
+function renderDx(){const v=curVisit();const all=DIAG.concat(v.diagnosis.filter(d=>!DIAG.includes(d)));
+  $('#dchips').innerHTML=all.map(d=>`<button class="chip${v.diagnosis.includes(d)?' on':''}" data-a="dx" data-v="${esc(d)}">${esc(d)}</button>`).join('')}
+function renderAdvice(){const v=curVisit();const all=ADVICE.concat(v.advice.filter(d=>!ADVICE.includes(d)));
+  $('#achips').innerHTML=all.map(d=>`<button class="chip${v.advice.includes(d)?' on':''}" data-a="adv" data-v="${esc(d)}">${esc(d)}</button>`).join('')}
+
+function renderLabs(){
+  const p=P(cur.pid);const dates=Object.keys(p.labs).sort();
+  if(!dates.length){$('#labwrap').innerHTML='<div style="padding:14px" class="hint">No reports yet. Pick the report date above and press “Add column”, or paste the report text.</div>';return}
+  let g='';let rows='';
+  allTests().forEach(t=>{
+    if(t.g!==g){g=t.g;rows+=`<tr class="grp"><th colspan="${dates.length+1}">${esc(g)}</th></tr>`}
+    rows+=`<tr><th class="tn">${esc(t.l)}<small>${esc(t.u)}</small></th>`+dates.map(d=>{
+      const val=labVal(p,d,t.k);const fl=flag(t,val);const nw=stage[d]&&stage[d][t.k]?' new':'';
+      return t.calc?`<td class="calc ${fl}" id="eg_${d}">${esc(val)}</td>`:
+       `<td class="${fl}${nw}"><input aria-label="${esc(t.l)} ${dmy(d)}" inputmode="decimal" data-lab="${d}" data-k="${t.k}" value="${esc(val)}"></td>`}).join('')+'</tr>';
+  });
+  $('#labwrap').innerHTML=`<table class="labs"><thead><tr><th class="tn">Test</th>${dates.map(d=>`<th><span class="colh">${dmy(d)}<button class="x" data-a="delCol" data-d="${d}" title="Remove this report column">×</button></span></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
+  const w=$('#labwrap');w.scrollLeft=w.scrollWidth;
+}
+function renderRx(){
+  const v=curVisit();
+  const opt=(list,val)=>(list.includes(val)||!val?list:[val].concat(list)).map(o=>`<option${o===val?' selected':''}>${esc(o)}</option>`).join('');
+  $('#rxt').innerHTML=v.rx.length?`<tbody>${v.rx.map((r,i)=>`<tr>
+    <td class="no">${i+1}</td>
+    <td><input class="drug" data-rx="${i}" data-rf="drug" value="${esc(r.drug)}" aria-label="Medicine"></td>
+    <td style="width:120px"><select data-rx="${i}" data-rf="freq" aria-label="Frequency">${opt(FREQS,r.freq)}</select></td>
+    <td style="width:130px"><select data-rx="${i}" data-rf="timing" aria-label="When">${opt(TIMINGS,r.timing)}</select></td>
+    <td style="width:110px"><select data-rx="${i}" data-rf="dur" aria-label="Duration">${opt(DURS,r.dur)}</select></td>
+    <td style="min-width:120px"><input data-rx="${i}" data-rf="note" value="${esc(r.note)}" placeholder="note" aria-label="Note"></td>
+    <td style="width:60px;white-space:nowrap"><button class="x" data-a="rxUp" data-i="${i}" title="Move up">↑</button><button class="x" data-a="rxDel" data-i="${i}" title="Remove">×</button></td></tr>`).join('')}</tbody>`
+   :'<tbody><tr><td class="hint" style="padding:10px">No medicines yet.</td></tr></tbody>';
+}
+function drugPool(){const mine=(db.settings.myDrugs||[]).filter(m=>!FORMULARY.some(f=>f[0]===m[0]));return mine.concat(FORMULARY)}
+function renderSugg(q){
+  q=q.trim().toLowerCase();const pool=drugPool();
+  const hits=q?pool.filter(d=>d[0].toLowerCase().replace(/^(tab|cap|inj|sachet|syp)\.?\s*/,'').includes(q)||d[0].toLowerCase().includes(q)).slice(0,7):[];
+  $('#sugg').innerHTML=hits.map((d,i)=>`<button data-a="addDrug" data-i="${pool.indexOf(d)}">${esc(d[0])} <span class="hint">${esc(d[1])}</span></button>`).join('')+
+   (q&&!hits.some(h=>h[0].toLowerCase()===q)?`<button data-a="addDrugFree">Add “${esc($('#drug_q').value.trim())}” as typed</button>`:'');
+}
+function addRx(d){const v=curVisit();v.rx.push({drug:d[0],freq:d[1]||'1-0-0',timing:d[2]||'After food',dur:d[3]||'1 month',note:''});touchVisit();renderRx();
+  const q=$('#drug_q');q.value='';renderSugg('');q.focus()}
+
+/* ---------- printable prescription ---------- */
+function rxHTML(){
+  const s=db.settings,p=P(cur.pid),v=curVisit();
+  const dates=Object.keys(p.labs).sort().filter(d=>allTests().some(t=>labVal(p,d,t.k))).slice(-5);
+  const tests=allTests().filter(t=>dates.some(d=>labVal(p,d,t.k)));
+  const vit=[['BP',v.vitals.bp,'mmHg'],['Pulse',v.vitals.pulse,'/min'],['Weight',v.vitals.wt,'kg'],['Height',v.vitals.ht,'cm'],['BMI',bmi(v),''],['SpO₂',v.vitals.spo2,'%'],['RBS',v.vitals.rbs,'mg/dL']].filter(x=>x[1]);
+  const usesFreq=v.rx.some(r=>/^[\d½]/.test(r.freq));
+  return `<div class="paper">
+   <div class="lh"><div><div class="dr">${esc(s.dr)}</div><div>${esc(s.quals)}</div><div>${esc(s.reg)}</div></div>
+     <div class="r"><b>${esc(s.clinic)}</b><div>${esc(s.address)}</div><div>${esc(s.phone)}</div><div>${esc(s.timings)}</div></div></div>
+   <div class="pt"><span><b>Name:</b> ${esc(p.name)}</span><span><b>Age/Sex:</b> ${ageAt(p,v.date)} y / ${esc(p.sex)}</span><span><b>UHID:</b> ${esc(p.uhid)}</span><span><b>Phone:</b> ${esc(p.phone)}</span><span><b>Date:</b> ${dmy(v.date)}</span></div>
+   ${vit.length?`<div class="pt">${vit.map(x=>`<span><b>${x[0]}:</b> ${esc(x[1])} ${x[2]}</span>`).join('')}</div>`:''}
+   ${v.complaints?`<h4>Complaints</h4><div>${esc(v.complaints).replace(/\n/g,'<br>')}</div>`:''}
+   ${v.diagnosis.length?`<h4>Diagnosis</h4><div>${v.diagnosis.map(esc).join(' · ')}</div>`:''}
+   ${tests.length?`<h4>Investigations</h4><table class="lt"><thead><tr><th>Test</th>${dates.map(d=>`<th>${dmy(d)}</th>`).join('')}</tr></thead><tbody>
+     ${tests.map(t=>`<tr><td>${esc(t.l)} <span style="color:#666">${esc(t.u)}</span></td>${dates.map(d=>{const x=labVal(p,d,t.k),f=flag(t,x);return `<td${f?' style="font-weight:700"':''}>${esc(x)}${f==='hi'?' ↑':f==='lo'?' ↓':''}</td>`}).join('')}</tr>`).join('')}</tbody></table>
+     <div class="legend">eGFR by CKD-EPI 2021 (creatinine). ↑ above, ↓ below the usual range.</div>`:''}
+   ${v.rx.length?`<div class="rxsym">℞</div><table><thead><tr><th style="width:24px">#</th><th>Medicine</th><th>Dose</th><th>When</th><th>Duration</th></tr></thead><tbody>
+     ${v.rx.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.drug)}</b>${r.note?`<div>${esc(r.note)}</div>`:''}</td><td>${esc(r.freq)}${freqText(r.freq)?`<div style="color:#555;font-size:11px">${freqText(r.freq)}</div>`:''}</td><td>${esc(r.timing==='—'?'':r.timing)}</td><td>${esc(r.dur)}</td></tr>`).join('')}</tbody></table>
+     ${usesFreq?'<div class="legend">1-0-1 means Morning – Afternoon – Night (सकाळ – दुपार – रात्र / सुबह – दोपहर – रात).</div>':''}`:''}
+   ${v.advice.length?`<h4>Advice</h4><ul>${v.advice.map(a=>`<li>${esc(a)}</li>`).join('')}</ul>`:''}
+   ${v.testsAdvised?`<h4>Tests before next visit</h4><div>${esc(v.testsAdvised)}</div>`:''}
+   ${v.followUp?`<h4>Next visit</h4><div><b>${dmy(v.followUp)}</b></div>`:''}
+   <div class="sig"><div></div><div class="r"><b>${esc(s.dr)}</b><div>${esc(s.reg)}</div></div></div>
+   ${s.footer?`<div class="foot">${esc(s.footer)}</div>`:''}</div>`;
+}
+function waText(){
+  const s=db.settings,p=P(cur.pid),v=curVisit();
+  let t=`*${s.clinic}*\n${s.dr}, ${s.quals}\n\nPrescription for *${p.name}* (${ageAt(p,v.date)}/${p.sex}) · ${dmy(v.date)}\n`;
+  if(v.diagnosis.length)t+=`Diagnosis: ${v.diagnosis.join(', ')}\n`;
+  if(v.rx.length)t+=`\n*Medicines*\n`+v.rx.map((r,i)=>`${i+1}. ${r.drug}: ${r.freq}${r.timing&&r.timing!=='—'?', '+r.timing.toLowerCase():''}, ${r.dur}${r.note?' ('+r.note+')':''}`).join('\n')+'\n';
+  if(v.advice.length)t+=`\n*Advice*\n`+v.advice.map(a=>'• '+a).join('\n')+'\n';
+  if(v.testsAdvised)t+=`\nTests before next visit: ${v.testsAdvised}\n`;
+  if(v.followUp)t+=`Next visit: *${dmy(v.followUp)}*\n`;
+  return t+`\n${s.phone}`;
+}
+
+/* ---------- report text reader ---------- */
+function parseReport(text){
+  const out={};let date='';
+  const dre=/\b(\d{1,2})[\/.\-](\d{1,2})[\/.\-](\d{4}|\d{2})\b/g;
+  const dm=dre.exec(text);
+  if(dm){let y=dm[3].length===2?'20'+dm[3]:dm[3];const iso=`${y}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`;if(validISO(iso)&&+dm[2]<=12)date=iso}
+  const clean=text.replace(dre,' ');
+  clean.split(/[\n;|]+/).forEach(seg=>{
+    let s=seg;let guard=0;
+    while(s&&guard++<20){
+      let best=null;
+      for(const [k,re] of ALIAS){const m=re.exec(s);if(m&&(!best||m.index<best.m.index))best={k,m}}
+      if(!best)break;
+      let rest=s.slice(best.m.index+best.m[0].length);
+      if(best.k==='alb'&&/^\s*[\/:]?\s*(globulin|\/\s*g\b|ratio)/i.test(rest)){s=rest;continue}
+      const nre=/([<>]?\d+(?:\.\d+)?)(\s*[-–]\s*\d+(?:\.\d+)?)?/g;let nm,val=null,end=0;
+      while((nm=nre.exec(rest))){if(nm[2]){continue}val=nm[1];end=nm.index+nm[0].length;break}
+      if(val==null){s=rest;continue}
+      // stop if another test name sits between the label and the number
+      const between=rest.slice(0,end-val.length);
+      if(ALIAS.some(([k,re])=>k!==best.k&&re.test(between))){s=rest;continue}
+      let k=best.k,n=parseFloat(val.replace(/[<>]/g,''));
+      if(k==='bun'){k='urea';val=String(Math.round(n*2.14))}
+      if(k==='cr'&&n>25){val=(n/88.4).toFixed(2)} // µmol/L → mg/dL
+      if(!(k in out))out[k]=val;
+      s=rest.slice(end);
+    }
+  });
+  return {date,values:out};
+}
+
+/* ---------- modals ---------- */
+function openModal(html,wide){$('#modal').className='modal'+(wide?' wide':'');$('#modal').innerHTML=html;$('#ov').hidden=false;const f=$('#modal').querySelector('[autofocus]');if(f)f.focus()}
+function closeModal(){$('#ov').hidden=true;$('#modal').innerHTML=''}
+function patientForm(p){
+  p=p||{name:'',age:'',sex:'',phone:'',address:''};
+  openModal(`<h3>${p.id?'Edit patient':'New patient'}</h3>
+   <form id="pform" class="vit" style="grid-template-columns:1fr 1fr">
+    <label class="f" style="grid-column:1/-1">Full name<input class="inp" id="pf_name" required autofocus value="${esc(p.name)}"></label>
+    <label class="f">Age (years)<input class="inp" id="pf_age" inputmode="numeric" required value="${esc(p.age)}"></label>
+    <div class="f"><span class="hint">Sex</span><div class="seg" id="pf_sex">${['M','F','O'].map(x=>`<button type="button" data-sex="${x}" class="${p.sex===x?'on':''}">${x==='M'?'Male':x==='F'?'Female':'Other'}</button>`).join('')}</div></div>
+    <label class="f">Mobile (WhatsApp)<input class="inp" id="pf_phone" inputmode="tel" value="${esc(p.phone)}" placeholder="10-digit number"></label>
+    <label class="f">Area / address<input class="inp" id="pf_addr" value="${esc(p.address)}"></label>
+    <div class="hint" id="pf_err" style="grid-column:1/-1;color:var(--hi)"></div>
+    <div class="mrow" style="grid-column:1/-1"><button type="button" class="btn" data-a="close">Cancel</button><button class="btn pri" type="submit">${p.id?'Save':'Save and start prescription'}</button></div>
+   </form>`);
+  let sex=p.sex;
+  $('#pf_sex').addEventListener('click',e=>{const b=e.target.closest('[data-sex]');if(!b)return;sex=b.dataset.sex;$('#pf_sex').querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===b))});
+  $('#pform').addEventListener('submit',e=>{e.preventDefault();
+    const name=$('#pf_name').value.trim(),age=$('#pf_age').value.trim(),phone=$('#pf_phone').value.replace(/[^\d+]/g,'');
+    if(!name||!/^\d{1,3}$/.test(age)){$('#pf_err').textContent='Enter the name and the age in years.';return}
+    if(!sex){$('#pf_err').textContent='Choose male, female or other.';return}
+    if(phone&&phone.replace(/\D/g,'').length<10){$('#pf_err').textContent='The mobile number needs 10 digits.';return}
+    if(p.id){Object.assign(p,{name,age:+age,sex,phone,address:$('#pf_addr').value.trim()});save();closeModal();renderList();renderSheet();return}
+    const np={id:uid(),uhid:'NR-'+String(db.settings.nextNo++).padStart(5,'0'),name,age:+age,sex,phone,address:$('#pf_addr').value.trim(),createdAt:new Date().toISOString(),labs:{}};
+    db.patients.push(np);save();closeModal();$('#search').value='';openPatient(np.id);
+  });
+}
+function settingsForm(){
+  const s=db.settings;const F=(k,l)=>`<label class="f">${l}<input class="inp" id="s_${k}" value="${esc(s[k])}"></label>`;
+  openModal(`<h3>Clinic settings</h3><p class="hint">These print on the letterhead of every prescription.</p>
+   ${F('dr','Doctor name')}${F('quals','Qualifications')}${F('reg','Registration number (as printed)')}${F('clinic','Clinic name')}${F('address','Clinic address')}${F('phone','Clinic phone')}${F('timings','Clinic timings')}
+   <label class="f">Footer note<textarea class="inp" id="s_footer">${esc(s.footer)}</textarea></label>
+   <div class="mrow"><button class="btn" data-a="close">Cancel</button><button class="btn pri" data-a="saveSettings">Save</button></div>
+   <hr style="border:0;border-top:1px solid var(--line);width:100%">
+   <h3 style="font-size:16px">Backup</h3>
+   <p class="hint">All records live in this browser on this device. Make a backup copy regularly.</p>
+   <div class="row"><button class="btn" data-a="export">Make a backup copy</button>
+    <label class="btn" for="imp">Restore from a backup file</label><input type="file" id="imp" accept=".json,application/json" hidden></div>
+   <div id="bk"></div>
+   ${db.patients.some(p=>p.sample)?'<div class="row"><button class="btn" data-a="delSample">Remove the sample patient</button></div>':''}`);
+  $('#imp').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.patients||!d.visits||!d.settings)throw 0;db=d;save();closeModal();cur={pid:null,vid:null,draft:null};renderList();renderEmpty()}catch(err){$('#bk').innerHTML='<div class="warn">That file is not a NephroRx backup.</div>'}};r.readAsText(f)});
+}
+function pasteForm(){
+  openModal(`<h3>Paste report text</h3>
+   <p class="hint">Paste text from a lab PDF or WhatsApp message, or type quickly, e.g. <code>cr 2.3 urea 80 k 5.6 hb 9.8</code>. You check every value before it goes in.</p>
+   <textarea class="inp" id="pt_txt" rows="7" autofocus placeholder="Serum Creatinine   2.31 mg/dL   0.6 - 1.2&#10;Potassium 5.6 mmol/L&#10;Haemoglobin 9.8 g/dL"></textarea>
+   <div class="row"><label class="f" style="flex-direction:row;align-items:center;gap:6px">Report date<input class="inp" type="date" id="pt_date" value="${today()}" style="width:auto"></label><button class="btn" data-a="readPaste">Read values</button></div>
+   <div id="pt_out"></div>`);
+}
+function readPaste(){
+  const {date,values}=parseReport($('#pt_txt').value);
+  if(date)$('#pt_date').value=date;
+  const tests=allTests().filter(t=>t.k in values);
+  $('#pt_out').innerHTML=tests.length?`<p class="hint">${date?'Report date found in the text and set above. ':''}Correct anything that looks wrong, then add.</p>
+   <div class="vit">${tests.map(t=>`<label class="f">${esc(t.l)} (${esc(t.u)})<input class="inp" data-pk="${t.k}" value="${esc(values[t.k])}"></label>`).join('')}</div>
+   <div class="mrow"><button class="btn" data-a="close">Cancel</button><button class="btn pri" data-a="applyPaste">Add to report column</button></div>`
+   :'<div class="warn">No test values were recognised. Check the test names, or type them straight into the grid.</div>';
+}
+
+/* ---------- events ---------- */
+function setStatus(t){const el=$('#status');if(el)el.textContent=t}
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;const v=curVisit&&cur.pid?curVisit():null;const p=P(cur.pid);
+  switch(a){
+  case 'newPatient':patientForm();break;
+  case 'editPatient':patientForm(p);break;
+  case 'settings':settingsForm();break;
+  case 'close':closeModal();break;
+  case 'openP':if(b.dataset.id)openPatient(b.dataset.id);break;
+  case 'openV':openPatient(cur.pid,b.dataset.id);break;
+  case 'newVisit':cur.vid=null;cur.draft=newDraft(cur.pid);renderSheet();break;
+  case 'back':cur.pid=null;renderList();renderEmpty();break;
+  case 'dx':{const d=b.dataset.v,i=v.diagnosis.indexOf(d);i<0?v.diagnosis.push(d):v.diagnosis.splice(i,1);touchVisit();renderDx();break}
+  case 'adv':{const d=b.dataset.v,i=v.advice.indexOf(d);i<0?v.advice.push(d):v.advice.splice(i,1);touchVisit();renderAdvice();break}
+  case 'fu':v.followUp=addDays(v.date||today(),+b.dataset.n);$('#v_fu').value=v.followUp;touchVisit();break;
+  case 'addCol':{const d=$('#lab_date').value;if(!validISO(d))return;if(!p.labs[d])p.labs[d]={};save();renderLabs();
+    const first=document.querySelector(`[data-lab="${d}"]`);if(first)first.focus();break}
+  case 'delCol':{if(b.dataset.armed){delete p.labs[b.dataset.d];save();renderLabs()}else{b.dataset.armed='1';b.textContent='remove?';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='×'}},3000)}break}
+  case 'addTest':{const raw=$('#ct_name').value.trim();if(!raw)return;const m=raw.match(/^(.*?)\s*\(([^)]*)\)\s*$/);const l=m?m[1]:raw,u=m?m[2]:'';
+    const k='c_'+l.toLowerCase().replace(/[^a-z0-9]+/g,'_');if(!allTests().some(t=>t.k===k))db.settings.customTests.push({k,l,u});$('#ct_name').value='';save();renderLabs();break}
+  case 'paste':pasteForm();break;
+  case 'readPaste':readPaste();break;
+  case 'applyPaste':{const d=$('#pt_date').value;if(!validISO(d))return;p.labs[d]=p.labs[d]||{};stage={[d]:{}};
+    document.querySelectorAll('[data-pk]').forEach(i=>{const val=i.value.trim();if(val){p.labs[d][i.dataset.pk]=val;stage[d][i.dataset.pk]=true}});save();closeModal();renderLabs();break}
+  case 'addDrug':addRx(drugPool()[+b.dataset.i]);break;
+  case 'addDrugFree':{const t=$('#drug_q').value.trim();if(!t)return;const d=[t,'1-0-0','After food','1 month'];db.settings.myDrugs.unshift(d);addRx(d);break}
+  case 'rxDel':v.rx.splice(+b.dataset.i,1);touchVisit();renderRx();break;
+  case 'rxUp':{const i=+b.dataset.i;if(i>0){[v.rx[i-1],v.rx[i]]=[v.rx[i],v.rx[i-1]];touchVisit();renderRx()}break}
+  case 'copyLast':{const prev=visitsOf(cur.pid).find(x=>x.id!==v.id&&x.rx.length);
+    if(!prev){setStatus('No earlier prescription to copy');return}
+    const have=new Set(v.rx.map(r=>r.drug));prev.rx.forEach(r=>{if(!have.has(r.drug))v.rx.push(Object.assign({},r))});
+    prev.diagnosis.forEach(d=>{if(!v.diagnosis.includes(d))v.diagnosis.push(d)});prev.advice.forEach(d=>{if(!v.advice.includes(d))v.advice.push(d)});
+    if(!v.testsAdvised)v.testsAdvised=prev.testsAdvised;touchVisit();renderSheet();setStatus('Copied from '+dmy(prev.date));break}
+  case 'saveTpl':{if(!v.rx.length){setStatus('Add medicines first, then save them as a template');return}
+    openModal(`<h3>Save as template</h3><label class="f">Template name<input class="inp" id="tpl_name" autofocus placeholder="e.g. CKD 3 with diabetes"></label>
+     <div class="mrow"><button class="btn" data-a="close">Cancel</button><button class="btn pri" data-a="saveTpl2">Save template</button></div>`);break}
+  case 'saveTpl2':{const n=$('#tpl_name').value.trim();if(!n)return;db.settings.templates.push({id:uid(),name:n,rx:v.rx.map(r=>[r.drug,r.freq,r.timing,r.dur]),advice:v.advice.slice()});save();closeModal();renderSheet();setStatus('Template saved');break}
+  case 'preview':openModal(`<div class="row" style="justify-content:space-between"><h3>Prescription preview</h3><div class="row">
+      ${framed?'':'<button class="btn pri" data-a="print">Print or save PDF</button>'}<button class="btn" data-a="whatsapp">WhatsApp</button><button class="btn" data-a="close">Close</button></div></div>
+      ${framed?'<div class="warn">Printing works once the app runs at its own web address (see the setup notes). This preview is exactly what will print on A4.</div>':''}
+      <div style="overflow-x:auto">${rxHTML()}</div>`,true);break;
+  case 'print':$('#printArea').innerHTML=rxHTML();window.print();break;
+  case 'whatsapp':{let ph=(p.phone||'').replace(/\D/g,'');if(ph.length===10)ph='91'+ph;
+    openModal(`<h3>Send on WhatsApp</h3><label class="f">Message (you can edit it)<textarea class="inp" id="wa_txt" rows="14">${esc(waText())}</textarea></label>
+     <div class="row">${ph?`<a class="btn pri" id="wa_go" href="https://wa.me/${ph}?text=" target="_blank" rel="noopener">Open WhatsApp chat with ${esc(p.phone)}</a>`:'<span class="hint">Add the patient’s mobile number to open WhatsApp directly.</span>'}
+      <button class="btn" data-a="copyWa">Copy message</button><span class="hint" id="wa_st"></span></div>
+     <p class="hint">To send the printed sheet as a PDF: Print, choose “Save as PDF”, then attach that file in the same chat. Sending the PDF automatically needs the WhatsApp Business API, planned for the next version.</p>
+     <div class="mrow"><button class="btn" data-a="close">Close</button></div>`);
+    const go=$('#wa_go');if(go){const upd=()=>go.href=`https://wa.me/${ph}?text=${encodeURIComponent($('#wa_txt').value)}`;upd();$('#wa_txt').addEventListener('input',upd)}break}
+  case 'copyWa':{const t=$('#wa_txt');navigator.clipboard&&navigator.clipboard.writeText(t.value).then(()=>$('#wa_st').textContent='Copied',()=>{t.select();$('#wa_st').textContent='Selected: press Ctrl+C or long-press to copy'});if(!navigator.clipboard){t.select()}break}
+  case 'saveSettings':['dr','quals','reg','clinic','address','phone','timings','footer'].forEach(k=>db.settings[k]=$('#s_'+k).value.trim());save();closeModal();break;
+  case 'export':{const json=JSON.stringify(db);const name='nephrorx-backup-'+today()+'.json';
+    if(!framed){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download=name;a.click();$('#bk').innerHTML='<p class="hint">Saved '+esc(name)+' to your downloads.</p>'}
+    else{$('#bk').innerHTML='<p class="hint">Downloads are blocked in this preview. Copy this text into a file named '+esc(name)+'.</p><textarea class="inp" rows="5" readonly>'+esc(json)+'</textarea>'}break}
+  case 'delSample':db.patients=db.patients.filter(x=>!x.sample);db.visits=db.visits.filter(x=>x.patientId!=='sample1');save();closeModal();if(cur.pid==='sample1'){cur.pid=null;renderEmpty()}renderList();break;
+  }
+});
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#ov').hidden)closeModal()});
+$('#search').addEventListener('input',renderList);
+
+document.addEventListener('input',e=>{
+  const t=e.target;if(!cur.pid||t.closest('#modal'))return;const v=curVisit(),p=P(cur.pid);
+  if(t.dataset.f){const path=t.dataset.f.split('.');if(path.length===2)v[path[0]][path[1]]=t.value;else v[path[0]]=t.value;
+    if(path[1]==='wt'||path[1]==='ht')$('#v_bmi').value=bmi(v);touchVisit();return}
+  if(t.dataset.lab){const d=t.dataset.lab,k=t.dataset.k;p.labs[d]=p.labs[d]||{};if(t.value.trim())p.labs[d][k]=t.value.trim();else delete p.labs[d][k];
+    const td=t.parentElement;const test=allTests().find(x=>x.k===k);td.classList.remove('hi','lo','new');const f=flag(test,t.value);if(f)td.classList.add(f);
+    if(k==='cr'){const eg=document.getElementById('eg_'+d);if(eg){const val=labVal(p,d,'egfr');eg.textContent=val;eg.className='calc '+flag(TESTS[1],val)}}
+    save();return}
+  if(t.dataset.rx){v.rx[+t.dataset.rx][t.dataset.rf]=t.value;touchVisit();return}
+  if(t.id==='drug_q')renderSugg(t.value);
+});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.rx&&t.tagName==='SELECT'){curVisit().rx[+t.dataset.rx][t.dataset.rf]=t.value;touchVisit()}
+  if(t.id==='tpl'&&t.value){const tp=db.settings.templates.find(x=>x.id===t.value),v=curVisit();const have=new Set(v.rx.map(r=>r.drug));
+    tp.rx.forEach(r=>{if(!have.has(r[0]))v.rx.push({drug:r[0],freq:r[1],timing:r[2],dur:r[3],note:''})});
+    (tp.advice||[]).forEach(a=>{const s=typeof a==='number'?ADVICE[a]:a;if(s&&!v.advice.includes(s))v.advice.push(s)});touchVisit();t.value='';renderRx();renderAdvice();setStatus('Template applied: '+tp.name)}
+});
+document.addEventListener('keydown',e=>{const t=e.target;if(e.key!=='Enter')return;
+  if(t.id==='drug_q'){e.preventDefault();const first=$('#sugg button');if(first)first.click();return}
+  if(t.id==='dx_add'||t.id==='adv_add'){e.preventDefault();const val=t.value.trim();if(!val)return;const v=curVisit();const arr=t.id==='dx_add'?v.diagnosis:v.advice;if(!arr.includes(val))arr.push(val);t.value='';touchVisit();t.id==='dx_add'?renderDx():renderAdvice();return}
+  if(t.id==='ct_name'){e.preventDefault();document.querySelector('[data-a="addTest"]').click();return}
+  if(t.dataset.lab){e.preventDefault();const cells=[...document.querySelectorAll(`[data-lab="${t.dataset.lab}"]`)];const n=cells[cells.indexOf(t)+1];if(n){n.focus();n.select()}}
+});
+
+renderList();
+if(!storageOK)setStatus('Browser storage is off');
+renderEmpty();
+})();
+</script>
+</body></html>
