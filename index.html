@@ -1,4 +1,8 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NephroRx"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#8c2f47"><link rel="apple-touch-icon" href="icon-180.png"><link rel="manifest" href="manifest.webmanifest">
 <title>NephroRx Prescription Desk</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -136,7 +140,20 @@ td.new input{background:var(--accent-soft)}
 .paper .sig .r{text-align:right;border-top:1px solid var(--paper-ink);padding-top:4px;min-width:200px}
 .paper .foot{border-top:1px solid var(--paper-line);margin-top:14px;padding-top:6px;font-size:10.5px;color:#444}
 #printArea{display:none}
-@media (max-width:820px){
+@media (max-width:1100px){.layout{grid-template-columns:240px minmax(0,1fr)}}
+.rx{min-width:700px}
+/* Touch screens (iPad, phones): larger targets, 16px fields so iOS never zooms on tap */
+@media (pointer:coarse){
+  .inp,label.f .inp,.rx input,.rx select,table.labs td input{font-size:16px}
+  .btn{min-height:40px;padding:8px 14px}.btn.sm{min-height:36px}
+  .chip{padding:7px 13px;font-size:14px}
+  .x{padding:6px 8px;font-size:16px}
+  table.labs td input{width:90px;padding:9px 8px}
+  .pitem{padding:11px 10px}
+  .sugg button{padding:8px 12px;font-size:14px}
+  .seg button{padding:9px 18px}
+}
+@media (max-width:900px){
   .layout{grid-template-columns:1fr}
   .layout.has-p .side{display:none}
   .layout:not(.has-p) .main{display:none}
@@ -402,7 +419,7 @@ function renderSheet(){
     <select class="inp" id="tpl" style="width:auto;padding:4px 8px"><option value="">Apply template…</option>${tpl}</select>
     <button class="btn sm" data-a="saveTpl">Save as template</button></span></h2>
     <div class="scroll" style="border:0"><table class="rx" id="rxt"></table></div>
-    <div style="margin-top:8px"><input class="inp" id="drug_q" placeholder="Type a medicine (e.g. telmi, bicarb, tacro) and press Enter" autocomplete="off"></div>
+    <div style="margin-top:8px"><input class="inp" id="drug_q" enterkeyhint="enter" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Type a medicine (e.g. telmi, bicarb, tacro) and press Enter" autocomplete="off"></div>
     <div class="sugg" id="sugg"></div>
   </section>
   <section class="card"><h2>Advice &amp; follow-up</h2>
@@ -435,7 +452,7 @@ function renderLabs(){
     rows+=`<tr><th class="tn">${esc(t.l)}<small>${esc(t.u)}</small></th>`+dates.map(d=>{
       const val=labVal(p,d,t.k);const fl=flag(t,val);const nw=stage[d]&&stage[d][t.k]?' new':'';
       return t.calc?`<td class="calc ${fl}" id="eg_${d}">${esc(val)}</td>`:
-       `<td class="${fl}${nw}"><input aria-label="${esc(t.l)} ${dmy(d)}" inputmode="decimal" data-lab="${d}" data-k="${t.k}" value="${esc(val)}"></td>`}).join('')+'</tr>';
+       `<td class="${fl}${nw}"><input enterkeyhint="next" aria-label="${esc(t.l)} ${dmy(d)}" inputmode="decimal" data-lab="${d}" data-k="${t.k}" value="${esc(val)}"></td>`}).join('')+'</tr>';
   });
   $('#labwrap').innerHTML=`<table class="labs"><thead><tr><th class="tn">Test</th>${dates.map(d=>`<th><span class="colh">${dmy(d)}<button class="x" data-a="delCol" data-d="${d}" title="Remove this report column">×</button></span></th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>`;
   const w=$('#labwrap');w.scrollLeft=w.scrollWidth;
@@ -447,8 +464,8 @@ function renderRx(){
     <td class="no">${i+1}</td>
     <td><input class="drug" data-rx="${i}" data-rf="drug" value="${esc(r.drug)}" aria-label="Medicine"></td>
     <td style="width:120px"><select data-rx="${i}" data-rf="freq" aria-label="Frequency">${opt(FREQS,r.freq)}</select></td>
-    <td style="width:130px"><select data-rx="${i}" data-rf="timing" aria-label="When">${opt(TIMINGS,r.timing)}</select></td>
-    <td style="width:110px"><select data-rx="${i}" data-rf="dur" aria-label="Duration">${opt(DURS,r.dur)}</select></td>
+    <td style="width:150px"><select data-rx="${i}" data-rf="timing" aria-label="When">${opt(TIMINGS,r.timing)}</select></td>
+    <td style="width:125px"><select data-rx="${i}" data-rf="dur" aria-label="Duration">${opt(DURS,r.dur)}</select></td>
     <td style="min-width:120px"><input data-rx="${i}" data-rf="note" value="${esc(r.note)}" placeholder="note" aria-label="Note"></td>
     <td style="width:60px;white-space:nowrap"><button class="x" data-a="rxUp" data-i="${i}" title="Move up">↑</button><button class="x" data-a="rxDel" data-i="${i}" title="Remove">×</button></td></tr>`).join('')}</tbody>`
    :'<tbody><tr><td class="hint" style="padding:10px">No medicines yet.</td></tr></tbody>';
@@ -590,6 +607,70 @@ function readPaste(){
    :'<div class="warn">No test values were recognised. Check the test names, or type them straight into the grid.</div>';
 }
 
+
+/* ---------- PDF (A4) for WhatsApp / share sheet ---------- */
+let dl=null;
+try{if(framed&&window.claude&&window.claude.use)window.claude.use('downloads').then(x=>{dl=x},()=>{})}catch(e){}
+const LIBS=['https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js','https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'];
+let libP=null,lastPdf=null;
+function loadLibs(){if(window.html2canvas&&window.jspdf)return Promise.resolve();if(libP)return libP;
+  libP=Promise.all(LIBS.map(src=>new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=src;sc.onload=res;sc.onerror=()=>rej(new Error('load'));document.head.appendChild(sc)}))).catch(e=>{libP=null;throw e});return libP}
+async function makePdf(){
+  await loadLibs();
+  const host=document.createElement('div');host.setAttribute('aria-hidden','true');
+  host.style.cssText='position:absolute;left:0;top:0;width:794px;z-index:-1;pointer-events:none';
+  host.innerHTML=rxHTML();document.body.appendChild(host);
+  const paper=host.firstElementChild;paper.style.boxShadow='none';paper.style.maxWidth='794px';paper.style.width='794px';
+  try{
+    if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    const scale=2;const canvas=await window.html2canvas(paper,{scale,backgroundColor:'#ffffff',logging:false});
+    const top=paper.getBoundingClientRect().top;
+    const cuts=[...paper.querySelectorAll('tr,h4,li,.pt,.lh,.sig,.legend,.foot,.rxsym,.paper>div')].map(el=>Math.round((el.getBoundingClientRect().bottom-top)*scale)).sort((a,b)=>a-b);
+    const {jsPDF}=window.jspdf;const pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
+    const W=210,H=297,margin=10,pxPerMm=canvas.width/W;
+    const totalMm=canvas.height/pxPerMm;
+    if(totalMm<=H*1.25){ // a little over one page: shrink to fit on a single A4 sheet
+      const h=Math.min(H,totalMm),w=W*h/totalMm;
+      pdf.addImage(canvas.toDataURL('image/jpeg',0.9),'JPEG',(W-w)/2,0,w,h);return pdf.output('blob');
+    }
+    let start=0,page=0;
+    while(start<canvas.height-2){
+      const avail=Math.floor((H-(page?2*margin:margin))*pxPerMm);
+      let end=start+avail;
+      if(end<canvas.height){const fit=cuts.filter(c=>c>start+40&&c<=end);if(fit.length)end=fit[fit.length-1]}else end=canvas.height;
+      const pc=document.createElement('canvas');pc.width=canvas.width;pc.height=end-start;
+      const cx=pc.getContext('2d');cx.fillStyle='#ffffff';cx.fillRect(0,0,pc.width,pc.height);cx.drawImage(canvas,0,start,canvas.width,end-start,0,0,canvas.width,end-start);
+      if(page)pdf.addPage();
+      pdf.addImage(pc.toDataURL('image/jpeg',0.9),'JPEG',0,page?margin:0,W,(end-start)/pxPerMm);
+      start=end;page++;
+    }
+    if(page>1){for(let i=1;i<=page;i++){pdf.setPage(i);pdf.setFontSize(8);pdf.setTextColor(90);pdf.text(`Page ${i} of ${page}`,W-margin,H-5,{align:'right'})}}
+    return pdf.output('blob');
+  }finally{host.remove()}
+}
+function pdfName(){const p=P(cur.pid),v=curVisit();return `Rx_${p.name.replace(/[^A-Za-z0-9]+/g,'_')}_${dmy(v.date).replace(/\//g,'-')}.pdf`}
+async function pdfFlow(){
+  openModal(`<h3>Prescription PDF</h3><p id="pdf_st">Making the A4 PDF…</p><div class="row" id="pdf_act"></div><div class="mrow"><button class="btn" data-a="close">Close</button></div>`);
+  try{
+    const blob=await makePdf();lastPdf={blob,name:pdfName()};
+    if(!$('#pdf_st'))return;
+    const file=typeof File==='function'?new File([blob],lastPdf.name,{type:'application/pdf'}):null;
+    const canShare=!framed&&file&&navigator.canShare&&navigator.canShare({files:[file]});
+    const kb=Math.max(1,Math.round(blob.size/1024));
+    $('#pdf_st').textContent=`Ready: ${lastPdf.name} (${kb} KB).`;
+    if(canShare||dl)$('#pdf_act').innerHTML=`<button class="btn pri" data-a="pdfShare">Share or save the PDF</button><span class="hint">In the share sheet, choose WhatsApp and then the patient.</span>`;
+    else if(!framed){const u=URL.createObjectURL(blob);$('#pdf_act').innerHTML=`<a class="btn pri" href="${u}" download="${esc(lastPdf.name)}">Download the PDF</a><span class="hint">Then attach it in the patient’s WhatsApp chat.</span>`}
+    else $('#pdf_act').innerHTML='<span class="hint">Saving files is not available in this view. Open the app in Safari or the Claude app.</span>';
+  }catch(e){if($('#pdf_st'))$('#pdf_st').textContent='The PDF could not be made. Check the internet connection and try again.'}
+}
+async function sharePdf(){
+  if(!lastPdf)return;const st=$('#pdf_st');
+  try{
+    if(!framed&&navigator.share){await navigator.share({files:[new File([lastPdf.blob],lastPdf.name,{type:'application/pdf'})],title:lastPdf.name});if(st)st.textContent='Shared.';return}
+    if(dl){await dl.save({filename:lastPdf.name,data:lastPdf.blob});if(st)st.textContent='Done.';return}
+  }catch(e){if(st)st.textContent=(e&&(e.name==='AbortError'||e.code==='declined'))?'Cancelled. Tap the button again to share.':'Sharing did not work here. Try again, or use Print.'}
+}
+
 /* ---------- events ---------- */
 function setStatus(t){const el=$('#status');if(el)el.textContent=t}
 document.addEventListener('click',e=>{
@@ -629,22 +710,25 @@ document.addEventListener('click',e=>{
      <div class="mrow"><button class="btn" data-a="close">Cancel</button><button class="btn pri" data-a="saveTpl2">Save template</button></div>`);break}
   case 'saveTpl2':{const n=$('#tpl_name').value.trim();if(!n)return;db.settings.templates.push({id:uid(),name:n,rx:v.rx.map(r=>[r.drug,r.freq,r.timing,r.dur]),advice:v.advice.slice()});save();closeModal();renderSheet();setStatus('Template saved');break}
   case 'preview':openModal(`<div class="row" style="justify-content:space-between"><h3>Prescription preview</h3><div class="row">
-      ${framed?'':'<button class="btn pri" data-a="print">Print or save PDF</button>'}<button class="btn" data-a="whatsapp">WhatsApp</button><button class="btn" data-a="close">Close</button></div></div>
-      ${framed?'<div class="warn">Printing works once the app runs at its own web address (see the setup notes). This preview is exactly what will print on A4.</div>':''}
+      <button class="btn pri" data-a="pdf">PDF for WhatsApp</button>${framed?'':'<button class="btn" data-a="print">Print</button>'}<button class="btn" data-a="whatsapp">WhatsApp text</button><button class="btn" data-a="close">Close</button></div></div>
+      <p class="hint">“PDF for WhatsApp” makes an A4 PDF of exactly this page and opens your iPad’s share sheet, so you can pick WhatsApp and the patient.</p>
       <div style="overflow-x:auto">${rxHTML()}</div>`,true);break;
+  case 'pdf':pdfFlow();break;
+  case 'pdfShare':sharePdf();break;
   case 'print':$('#printArea').innerHTML=rxHTML();window.print();break;
   case 'whatsapp':{let ph=(p.phone||'').replace(/\D/g,'');if(ph.length===10)ph='91'+ph;
     openModal(`<h3>Send on WhatsApp</h3><label class="f">Message (you can edit it)<textarea class="inp" id="wa_txt" rows="14">${esc(waText())}</textarea></label>
      <div class="row">${ph?`<a class="btn pri" id="wa_go" href="https://wa.me/${ph}?text=" target="_blank" rel="noopener">Open WhatsApp chat with ${esc(p.phone)}</a>`:'<span class="hint">Add the patient’s mobile number to open WhatsApp directly.</span>'}
       <button class="btn" data-a="copyWa">Copy message</button><span class="hint" id="wa_st"></span></div>
-     <p class="hint">To send the printed sheet as a PDF: Print, choose “Save as PDF”, then attach that file in the same chat. Sending the PDF automatically needs the WhatsApp Business API, planned for the next version.</p>
+     <div class="row"><button class="btn" data-a="pdf">Make the PDF instead</button><span class="hint">Opens the share sheet: choose WhatsApp, then the patient.</span></div>
      <div class="mrow"><button class="btn" data-a="close">Close</button></div>`);
     const go=$('#wa_go');if(go){const upd=()=>go.href=`https://wa.me/${ph}?text=${encodeURIComponent($('#wa_txt').value)}`;upd();$('#wa_txt').addEventListener('input',upd)}break}
   case 'copyWa':{const t=$('#wa_txt');navigator.clipboard&&navigator.clipboard.writeText(t.value).then(()=>$('#wa_st').textContent='Copied',()=>{t.select();$('#wa_st').textContent='Selected: press Ctrl+C or long-press to copy'});if(!navigator.clipboard){t.select()}break}
   case 'saveSettings':['dr','quals','reg','clinic','address','phone','timings','footer'].forEach(k=>db.settings[k]=$('#s_'+k).value.trim());save();closeModal();break;
   case 'export':{const json=JSON.stringify(db);const name='nephrorx-backup-'+today()+'.json';
     if(!framed){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download=name;a.click();$('#bk').innerHTML='<p class="hint">Saved '+esc(name)+' to your downloads.</p>'}
-    else{$('#bk').innerHTML='<p class="hint">Downloads are blocked in this preview. Copy this text into a file named '+esc(name)+'.</p><textarea class="inp" rows="5" readonly>'+esc(json)+'</textarea>'}break}
+    else if(dl){dl.save({filename:name,data:json}).then(()=>$('#bk').innerHTML='<p class="hint">Backup saved: '+esc(name)+'</p>',err=>{$('#bk').innerHTML='<p class="hint">'+(err&&err.code==='declined'?'Backup not saved.':'Saving files is not available here.')+'</p>'})}
+    else{$('#bk').innerHTML='<p class="hint">Saving files is not available here. Copy this text into a file named '+esc(name)+'.</p><textarea class="inp" rows="5" readonly>'+esc(json)+'</textarea>'}break}
   case 'delSample':db.patients=db.patients.filter(x=>!x.sample);db.visits=db.visits.filter(x=>x.patientId!=='sample1');save();closeModal();if(cur.pid==='sample1'){cur.pid=null;renderEmpty()}renderList();break;
   }
 });
@@ -676,6 +760,7 @@ document.addEventListener('keydown',e=>{const t=e.target;if(e.key!=='Enter')retu
   if(t.dataset.lab){e.preventDefault();const cells=[...document.querySelectorAll(`[data-lab="${t.dataset.lab}"]`)];const n=cells[cells.indexOf(t)+1];if(n){n.focus();n.select()}}
 });
 
+try{if(!framed&&navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 renderList();
 if(!storageOK)setStatus('Browser storage is off');
 renderEmpty();
