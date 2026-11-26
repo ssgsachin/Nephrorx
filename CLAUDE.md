@@ -1,6 +1,6 @@
 # NephroRx — instructions for Claude
 
-The owner is a practising nephrologist (Mumbai/Thane), not a programmer, who uses this on an iPad.
+The owner is a practising nephrologist, not a programmer, who uses this on an iPad.
 They will ask for changes in plain words. Do the whole job: change, test, publish, save. Explain the
 result in plain language without code jargon, and ask only when a decision is genuinely theirs.
 
@@ -17,7 +17,7 @@ result in plain language without code jargon, and ask only when a decision is ge
    Add a check to tests/smoke.js for any new feature.
 3. Republish the preview with the Artifact tool: file `app.html`, url https://claude.ai/artifact/QSswE3Zquvg22TvwwqGagb
    (read it first if this session has not; keep capabilities `downloads`).
-4. Commit and push.
+4. Commit and push to main. GitHub Pages publishes index.html at https://ssgsachin.github.io/Nephrorx/ within a few minutes.
 
 ## Rules that protect patient data
 - Data lives in the browser (`localStorage` key `nephrorx-v1`). Never rename the key or change the data shape
