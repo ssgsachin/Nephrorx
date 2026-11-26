@@ -382,7 +382,7 @@ function renderSheet(){
   <section class="card">
     <div class="phead"><button class="btn sm back" data-a="back">← Patients</button>
       <h1>${esc(p.name)}</h1><span class="meta">${esc(p.uhid)} · ${esc(p.age)} y / ${esc(p.sex)} · ${esc(p.phone)}${p.address?' · '+esc(p.address):''}</span>
-      ${p.sample?'<span class="tag">SAMPLE PATIENT</span>':''}
+      ${p.sample?'<span class="tag">SAMPLE PATIENT</span>':''}${p.consent?`<span class="tag" title="Consent recorded ${dmy(p.consent.slice(0,10))}">CONSENT ✓</span>`:'<button class="btn sm" data-a="editPatient">Record consent</button>'}
       <button class="btn sm ghost" data-a="editPatient">Edit details</button></div>
     <div class="visits" id="vchips"></div>
   </section>
@@ -560,6 +560,8 @@ function patientForm(p){
     <div class="f"><span class="hint">Sex</span><div class="seg" id="pf_sex">${['M','F','O'].map(x=>`<button type="button" data-sex="${x}" class="${p.sex===x?'on':''}">${x==='M'?'Male':x==='F'?'Female':'Other'}</button>`).join('')}</div></div>
     <label class="f">Mobile (WhatsApp)<input class="inp" id="pf_phone" inputmode="tel" value="${esc(p.phone)}" placeholder="10-digit number"></label>
     <label class="f">Area / address<input class="inp" id="pf_addr" value="${esc(p.address)}"></label>
+    <label style="grid-column:1/-1;display:flex;gap:8px;align-items:flex-start;font-size:14px"><input type="checkbox" id="pf_consent" style="width:20px;height:20px;margin-top:1px" ${p.consent?'checked':''}>
+      <span>Patient agrees that the clinic keeps their health records digitally and sends prescriptions on WhatsApp.<br><span class="hint">Required under the DPDP Act. Ask the patient, then tick.</span></span></label>
     <div class="hint" id="pf_err" style="grid-column:1/-1;color:var(--hi)"></div>
     <div class="mrow" style="grid-column:1/-1"><button type="button" class="btn" data-a="close">Cancel</button><button class="btn pri" type="submit">${p.id?'Save':'Save and start prescription'}</button></div>
    </form>`);
@@ -570,8 +572,9 @@ function patientForm(p){
     if(!name||!/^\d{1,3}$/.test(age)){$('#pf_err').textContent='Enter the name and the age in years.';return}
     if(!sex){$('#pf_err').textContent='Choose male, female or other.';return}
     if(phone&&phone.replace(/\D/g,'').length<10){$('#pf_err').textContent='The mobile number needs 10 digits.';return}
-    if(p.id){Object.assign(p,{name,age:+age,sex,phone,address:$('#pf_addr').value.trim()});save();closeModal();renderList();renderSheet();return}
-    const np={id:uid(),uhid:'NR-'+String(db.settings.nextNo++).padStart(5,'0'),name,age:+age,sex,phone,address:$('#pf_addr').value.trim(),createdAt:new Date().toISOString(),labs:{}};
+    const consent=$('#pf_consent').checked?(p.consent||new Date().toISOString()):null;
+    if(p.id){Object.assign(p,{name,age:+age,sex,phone,address:$('#pf_addr').value.trim(),consent});save();closeModal();renderList();renderSheet();return}
+    const np={id:uid(),uhid:'NR-'+String(db.settings.nextNo++).padStart(5,'0'),name,age:+age,sex,phone,address:$('#pf_addr').value.trim(),consent,createdAt:new Date().toISOString(),labs:{}};
     db.patients.push(np);save();closeModal();$('#search').value='';openPatient(np.id);
   });
 }
