@@ -2,10 +2,13 @@
 
 ## Daily (2 minutes)
 - iPad: passcode on, auto-lock 2 minutes, nobody else uses the clinic iPad with your login.
-- New patient: ask for consent and tick the box before saving.
+- New patient: ask for consent and tick the box before saving. If you will use "Read with AI" on their reports,
+  mention that report photos are read by an AI service.
+- Check every value the AI reads before tapping "Add to investigations".
 
 ## Weekly (5 minutes, e.g. Saturday evening)
-- Clinic settings → Make a backup copy. Keep it in a private Google Drive / iCloud folder.
+- Clinic settings → Make a backup copy (includes scan photos, so it grows over time). Keep it in a private
+  Google Drive / iCloud folder.
   Keep the last 8 weekly copies; delete older ones.
 - Open the newest backup once a month in "Restore" on a second device to confirm it works.
 

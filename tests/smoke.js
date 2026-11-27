@@ -42,6 +42,40 @@ for(const [name,dev] of views){
   // reload keeps data
   await pg.reload();ok(await pg.isVisible('text=Test Patient'),'data kept after reload');
   if(name==='laptop'){
+    // follow-up: last visit's medicines are ready
+    await click('.pitem >> text=Test Patient');await click('[data-a=newVisit]');
+    ok(await pg.$$eval('#rxt tr',r=>r.length)===2&&await pg.isVisible('[data-a=clearRx]'),'previous medicines ready at follow-up');
+    await click('[data-a=rxDel][data-i="1"]');
+    ok(await pg.isVisible('#sugg >> text=Your usual:')&&await pg.isVisible('#sugg >> text=Sodium bicarbonate'),'usual medicines offered');
+    await click('#sugg >> text=Sodium bicarbonate');
+    // smart suggestions + templates
+    await pg.click('#v_cc');await pg.type('#v_cc','swel');
+    await pg.click('#sg_cc >> text=Swelling of feet');
+    ok((await pg.inputValue('#v_cc')).startsWith('Swelling of feet'),'complaint suggestion inserted');
+    await pg.click('#sg_cc .pinbtn');
+    await pg.fill('#p_hx','Diabetes since 8 years');
+    // language on the prescription
+    await click('.actions [data-a=preview]');
+    await pg.selectOption('#rx_lang','mr');
+    const paper=await pg.textContent('#paperbox');
+    ok(paper.includes('सकाळी')&&paper.includes('जेवणानंतर')&&paper.includes('औषधे'),'Marathi on the prescription');
+    ok(paper.includes('Past history')&&paper.includes('Diabetes since 8 years'),'past history printed');
+    await pg.selectOption('#rx_lang','ta').catch(()=>{});
+    for(const [l,word] of [['hi','सुबह'],['gu','સવારે'],['kn','ಬೆಳಿಗ್ಗೆ'],['ml','രാവിലെ'],['te','ఉదయం'],['or','ସକାଳେ'],['bn','সকালে'],['pa','ਸਵੇਰੇ'],['as','পুৱা']]){
+      await pg.selectOption('#rx_lang',l);ok((await pg.textContent('#paperbox')).includes(word),'language '+l)}
+    await pg.selectOption('#rx_lang','mr');
+    await click('#modal [data-a=close]');
+    await click('.actions [data-a=whatsapp]');
+    ok((await pg.inputValue('#wa_txt')).includes('जेवणानंतर'),'WhatsApp message in Marathi');
+    await click('#modal [data-a=close]');
+    // scan photos
+    await pg.setInputFiles('#ph_in',path.join(root,'icon-180.png'));
+    await pg.waitForSelector('#files .thumb img');
+    await click('#files .thumb');ok(!!(await pg.waitForSelector('.fullimg',{timeout:5000}).catch(()=>null)),'photo opens full size');
+    await pg.fill('#fv_cap','Right kidney 9.1 cm');await click('[data-a=saveFile]');
+    await pg.waitForSelector('#files >> text=Right kidney 9.1 cm');
+    // templates list in settings
+    await click('.top [data-a=settings]');ok(await pg.isVisible('#modal >> text=Swelling of feet'),'saved template listed');await click('#modal [data-a=close]');
     // links from the clinic website/app
     await pg.goto(url+'#patient?name=Asha%20Rao&phone=%2B91%2090000%2011111&age=50&sex=female');
     ok(await pg.inputValue('#pf_name')==='Asha Rao'&&await pg.inputValue('#pf_phone')==='9000011111','website link prefills New patient');
@@ -68,4 +102,30 @@ for(const [name,dev] of views){
   ok(errs.length===0,'no script errors '+errs.join('; '));
   await ctx.close();
 }
+// AI report reading, with a stand-in for the Claude app's AI
+{const ctx=await b.newContext({viewport:{width:1280,height:900}});
+  await ctx.route(/cdnjs|jsdelivr|fonts\./,r=>r.abort());
+  await ctx.addInitScript(()=>{window.claude={use:async n=>{if(n!=='sample')return null;const f=async()=>({text:''});
+    f.json=async(input,opts)=>{window.__imgs=(opts&&opts.images||[]).length;if(/^Translate/.test(input))return ['अनुवाद केलेला सल्ला'];
+      return {reports:[{date:'2026-11-21',values:{cr:'3.1',k:'5.9',bogus:'1',hb:'nine'},other:[{name:'C3',value:'80',unit:'mg/dL'}]},{date:'2026-10-02',values:{cr:'2.8'},other:[]}]}};
+    f.limits=async()=>({images:{maxCount:5,maxInputBytes:5e6,mediaTypes:['image/jpeg','image/png']}});return f}}});
+  const pg=await ctx.newPage();const errs=[];pg.on('pageerror',e=>errs.push(e.message));
+  await pg.goto(url);console.log('ai (simulated)');
+  await pg.click('.top [data-a=newPatient]');await pg.fill('#pf_name','AI Patient');await pg.fill('#pf_age','60');await pg.click('[data-sex=M]');await pg.click('#pform button[type=submit]');
+  await pg.click('[data-a=paste]');await pg.setInputFiles('#rp_photo',path.join(root,'icon-180.png'));
+  await pg.waitForSelector('#rp_thumbs img');await pg.click('[data-a=readAI]');
+  await pg.waitForSelector('.rev');
+  ok(await pg.$$eval('.rev',r=>r.length)===2,'two report dates found');
+  ok(await pg.evaluate(()=>window.__imgs)===1,'photo sent to AI');
+  ok(await pg.$$eval('[data-pk]',e=>e.map(x=>x.dataset.pk).join())==='cr,k,cr','only valid values kept');
+  await pg.click('[data-a=applyPaste]');
+  await pg.waitForSelector('[data-lab="2026-11-21"][data-k=cr]');
+  ok(await pg.inputValue('[data-lab="2026-11-21"][data-k=cr]')==='3.1'&&await pg.inputValue('[data-lab="2026-10-02"][data-k=cr]')==='2.8','AI values in the grid');
+  ok(await pg.isVisible('th.tn >> text=C3'),'other test added as a new row');
+  await pg.waitForSelector('#files .thumb');ok(true,'report photo kept in files');
+  // translate own advice
+  await pg.fill('#adv_add','Avoid star fruit');await pg.press('#adv_add','Enter');
+  await pg.click('.actions [data-a=preview]');await pg.selectOption('#rx_lang','mr');await pg.click('[data-a=trAI]');
+  await pg.waitForFunction(()=>document.querySelector('#paperbox').textContent.includes('अनुवाद केलेला सल्ला'));ok(true,'AI translation of own advice');
+  ok(errs.length===0,'no script errors '+errs.join('; '));await ctx.close()}
 await b.close();console.log(failed?`${failed} check(s) failed`:'All checks passed');process.exit(failed?1:0)})();

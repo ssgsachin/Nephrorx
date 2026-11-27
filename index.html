@@ -144,6 +144,18 @@ td.new input{background:var(--accent-soft)}
 .paper .links .qr img{width:78px;height:78px;image-rendering:pixelated;display:block;margin:0 auto 2px}
 code.lk{display:block;padding:8px;background:var(--soft);border-radius:6px;font-family:var(--f-data);font-size:12px;word-break:break-all;user-select:all}
 #printArea{display:none}
+.files{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.thumb{border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:0;overflow:hidden;text-align:left;cursor:pointer;display:flex;flex-direction:column;color:var(--ink)}
+.thumb img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:var(--soft)}
+.thumb span{padding:6px 8px;font-size:12px;line-height:1.35}
+.rp-ways{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card2,.rev{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.chk{display:flex;gap:8px;align-items:center}.chk input{width:20px;height:20px;flex:none}
+.sugg .pinbtn{border-style:dashed;color:var(--muted)}
+.fullimg{max-width:100%;max-height:65vh;object-fit:contain;background:var(--soft);border-radius:6px;align-self:center}
+.paper .loc{color:#222;font-size:.96em}.paper .sub{color:#555;font-size:11px}
+.prevtag{font-size:10px;color:var(--accent);margin-left:2px;letter-spacing:.04em}
+@media (max-width:720px){.rp-ways{grid-template-columns:1fr}}
 @media (max-width:1100px){.layout{grid-template-columns:240px minmax(0,1fr)}}
 .rx{min-width:700px}
 /* Touch screens (iPad, phones): larger targets, 16px fields so iOS never zooms on tap */
@@ -295,6 +307,52 @@ const TEMPLATES0=[
  {id:'t2',name:'Transplant maintenance',rx:[['Cap. Tacrolimus 1 mg','1-0-1','Empty stomach','Continue'],['Tab. Mycophenolate mofetil 500 mg','1-0-1','After food','Continue'],['Tab. Prednisolone 5 mg','1-0-0','After food','Continue'],['Tab. Cotrimoxazole 480 mg','0-0-1','After food','6 months'],['Tab. Pantoprazole 40 mg','1-0-0','Before food','1 month']],advice:[3,4,8]}
 ];
 
+/* ---------- languages on the prescription ---------- */
+const LANGS={en:'English only',hi:'हिन्दी · Hindi',mr:'मराठी · Marathi',gu:'ગુજરાતી · Gujarati',kn:'ಕನ್ನಡ · Kannada',ml:'മലയാളം · Malayalam',te:'తెలుగు · Telugu',or:'ଓଡ଼ିଆ · Odia',bn:'বাংলা · Bengali',pa:'ਪੰਜਾਬੀ · Punjabi',as:'অসমীয়া · Assamese'};
+const LFONT={hi:'Noto Sans Devanagari',mr:'Noto Sans Devanagari',gu:'Noto Sans Gujarati',kn:'Noto Sans Kannada',ml:'Noto Sans Malayalam',te:'Noto Sans Telugu',or:'Noto Sans Oriya',bn:'Noto Sans Bengali',as:'Noto Sans Bengali',pa:'Noto Sans Gurmukhi'};
+const TR={
+ en:{hdx:'Diagnosis',hrx:'Medicines',hhow:'How to take',hdur:'Duration',hadv:'Advice',htest:'Tests before next visit',hnext:'Next visit',m:'Morning',a:'Afternoon',e:'Evening',n:'Night',sos:'When needed',w1:'Once a week',w2:'Twice a week',w3:'Three times a week',alt:'Alternate days',af:'After food',bf:'Before food',wm:'With meals',bt:'At bedtime',es:'Empty stomach',d:['day','days'],wk:['week','weeks'],mo:['month','months'],dz:['dose','doses'],cont:'Continue, do not stop',adv:null},
+ hi:{hdx:'निदान',hrx:'दवाइयाँ',hhow:'कैसे लें',hdur:'कितने दिन',hadv:'सलाह',htest:'अगली बार से पहले जाँचें',hnext:'अगली मुलाक़ात',m:'सुबह',a:'दोपहर',e:'शाम',n:'रात',sos:'ज़रूरत पड़ने पर',w1:'हफ़्ते में एक बार',w2:'हफ़्ते में दो बार',w3:'हफ़्ते में तीन बार',alt:'एक दिन छोड़कर',af:'खाने के बाद',bf:'खाने से पहले',wm:'खाने के साथ',bt:'सोते समय',es:'खाली पेट',d:['दिन','दिन'],wk:['हफ़्ता','हफ़्ते'],mo:['महीना','महीने'],dz:['खुराक','खुराक'],cont:'लगातार लें, बंद न करें',
+  adv:['नमक दिन में 5 ग्राम से कम (एक छोटा चम्मच)','पानी/तरल दिन में केवल 1 से 1.5 लीटर','कम पोटैशियम वाला खाना: नारियल पानी, फलों का रस, सूखे मेवे न लें','दर्द की दवाइयाँ न लें (डाइक्लोफेनाक, आइबुप्रोफेन, निमेसुलाइड)','बिना पूछे जड़ी-बूटी या आयुर्वेदिक दवाइयाँ न लें','रोज़ BP जाँचें और रिकॉर्ड साथ लाएँ','खाली पेट और खाने के बाद शुगर जाँचें','प्रोटीन: शरीर के हर किलो वज़न पर रोज़ 0.8 ग्राम','दिन में 3 लीटर पानी पिएँ','रोज़ 30 मिनट पैदल चलें']},
+ mr:{hdx:'निदान',hrx:'औषधे',hhow:'कशी घ्यावी',hdur:'किती दिवस',hadv:'सल्ला',htest:'पुढील भेटीपूर्वी तपासण्या',hnext:'पुढील भेट',m:'सकाळी',a:'दुपारी',e:'संध्याकाळी',n:'रात्री',sos:'गरज असेल तेव्हा',w1:'आठवड्यातून एकदा',w2:'आठवड्यातून दोनदा',w3:'आठवड्यातून तीनदा',alt:'एक दिवसाआड',af:'जेवणानंतर',bf:'जेवणापूर्वी',wm:'जेवणासोबत',bt:'झोपताना',es:'उपाशीपोटी',d:['दिवस','दिवस'],wk:['आठवडा','आठवडे'],mo:['महिना','महिने'],dz:['डोस','डोस'],cont:'सतत घ्या, बंद करू नका',
+  adv:['मीठ दिवसाला 5 ग्रॅमपेक्षा कमी (एक लहान चमचा)','पाणी/द्रव दिवसाला फक्त 1 ते 1.5 लिटर','कमी पोटॅशियम आहार: नारळपाणी, फळांचे रस, सुकामेवा टाळा','वेदनाशामक गोळ्या घेऊ नका (डायक्लोफेनॅक, आयबुप्रोफेन, निमेसुलाइड)','विचारल्याशिवाय वनौषधी किंवा आयुर्वेदिक औषधे घेऊ नका','रोज BP तपासा आणि नोंद सोबत आणा','उपाशीपोटी आणि जेवणानंतर साखर तपासा','प्रथिने: शरीराच्या प्रति किलो वजनाला रोज 0.8 ग्रॅम','दिवसाला 3 लिटर पाणी प्या','रोज 30 मिनिटे चाला']},
+ gu:{hdx:'નિદાન',hrx:'દવાઓ',hhow:'કેવી રીતે લેવી',hdur:'કેટલા દિવસ',hadv:'સલાહ',htest:'આગલી મુલાકાત પહેલાં તપાસ',hnext:'આગલી મુલાકાત',m:'સવારે',a:'બપોરે',e:'સાંજે',n:'રાત્રે',sos:'જરૂર પડે ત્યારે',w1:'અઠવાડિયામાં એક વાર',w2:'અઠવાડિયામાં બે વાર',w3:'અઠવાડિયામાં ત્રણ વાર',alt:'એકાંતરે દિવસે',af:'જમ્યા પછી',bf:'જમ્યા પહેલાં',wm:'જમવા સાથે',bt:'સૂતી વખતે',es:'ખાલી પેટે',d:['દિવસ','દિવસ'],wk:['અઠવાડિયું','અઠવાડિયાં'],mo:['મહિનો','મહિના'],dz:['ડોઝ','ડોઝ'],cont:'ચાલુ રાખો, બંધ ન કરો',
+  adv:['મીઠું દિવસમાં 5 ગ્રામથી ઓછું (એક નાની ચમચી)','પાણી/પ્રવાહી દિવસમાં ફક્ત 1 થી 1.5 લિટર','ઓછા પોટેશિયમવાળો ખોરાક: નાળિયેર પાણી, ફળોનો રસ, સૂકો મેવો ટાળો','દુખાવાની દવાઓ ન લો (ડાયક્લોફેનાક, આઇબુપ્રોફેન, નિમેસુલાઇડ)','પૂછ્યા વિના જડીબુટ્ટી કે આયુર્વેદિક દવાઓ ન લો','રોજ BP તપાસો અને નોંધ સાથે લાવો','ખાલી પેટે અને જમ્યા પછી સુગર તપાસો','પ્રોટીન: શરીરના દરેક કિલો વજન દીઠ રોજ 0.8 ગ્રામ','દિવસમાં 3 લિટર પાણી પીવો','રોજ 30 મિનિટ ચાલો']},
+ kn:{hdx:'ರೋಗನಿರ್ಣಯ',hrx:'ಔಷಧಿಗಳು',hhow:'ಹೇಗೆ ತೆಗೆದುಕೊಳ್ಳಬೇಕು',hdur:'ಎಷ್ಟು ದಿನ',hadv:'ಸಲಹೆ',htest:'ಮುಂದಿನ ಭೇಟಿಗೆ ಮುನ್ನ ಪರೀಕ್ಷೆಗಳು',hnext:'ಮುಂದಿನ ಭೇಟಿ',m:'ಬೆಳಿಗ್ಗೆ',a:'ಮಧ್ಯಾಹ್ನ',e:'ಸಂಜೆ',n:'ರಾತ್ರಿ',sos:'ಅಗತ್ಯವಿದ್ದಾಗ',w1:'ವಾರಕ್ಕೆ ಒಮ್ಮೆ',w2:'ವಾರಕ್ಕೆ ಎರಡು ಬಾರಿ',w3:'ವಾರಕ್ಕೆ ಮೂರು ಬಾರಿ',alt:'ದಿನ ಬಿಟ್ಟು ದಿನ',af:'ಊಟದ ನಂತರ',bf:'ಊಟಕ್ಕೆ ಮುನ್ನ',wm:'ಊಟದ ಜೊತೆ',bt:'ಮಲಗುವ ಮುನ್ನ',es:'ಖಾಲಿ ಹೊಟ್ಟೆಯಲ್ಲಿ',d:['ದಿನ','ದಿನಗಳು'],wk:['ವಾರ','ವಾರಗಳು'],mo:['ತಿಂಗಳು','ತಿಂಗಳುಗಳು'],dz:['ಡೋಸ್','ಡೋಸ್‌ಗಳು'],cont:'ಮುಂದುವರಿಸಿ, ನಿಲ್ಲಿಸಬೇಡಿ',
+  adv:['ಉಪ್ಪು ದಿನಕ್ಕೆ 5 ಗ್ರಾಂಗಿಂತ ಕಡಿಮೆ (ಒಂದು ಸಣ್ಣ ಚಮಚ)','ನೀರು/ದ್ರವ ದಿನಕ್ಕೆ 1 ರಿಂದ 1.5 ಲೀಟರ್ ಮಾತ್ರ','ಕಡಿಮೆ ಪೊಟ್ಯಾಸಿಯಮ್ ಆಹಾರ: ಎಳನೀರು, ಹಣ್ಣಿನ ರಸ, ಒಣ ಹಣ್ಣುಗಳನ್ನು ತಪ್ಪಿಸಿ','ನೋವು ನಿವಾರಕ ಮಾತ್ರೆಗಳನ್ನು ತೆಗೆದುಕೊಳ್ಳಬೇಡಿ (ಡೈಕ್ಲೋಫೆನಾಕ್, ಐಬುಪ್ರೊಫೆನ್, ನಿಮೆಸುಲೈಡ್)','ಕೇಳದೆ ಗಿಡಮೂಲಿಕೆ ಅಥವಾ ಆಯುರ್ವೇದ ಔಷಧಿ ತೆಗೆದುಕೊಳ್ಳಬೇಡಿ','ಪ್ರತಿದಿನ BP ಪರೀಕ್ಷಿಸಿ ಮತ್ತು ದಾಖಲೆ ತನ್ನಿ','ಖಾಲಿ ಹೊಟ್ಟೆಯಲ್ಲಿ ಮತ್ತು ಊಟದ ನಂತರ ಸಕ್ಕರೆ ಪರೀಕ್ಷಿಸಿ','ಪ್ರೋಟೀನ್: ದೇಹದ ಪ್ರತಿ ಕೆಜಿ ತೂಕಕ್ಕೆ ದಿನಕ್ಕೆ 0.8 ಗ್ರಾಂ','ದಿನಕ್ಕೆ 3 ಲೀಟರ್ ನೀರು ಕುಡಿಯಿರಿ','ಪ್ರತಿದಿನ 30 ನಿಮಿಷ ನಡೆಯಿರಿ']},
+ ml:{hdx:'രോഗനിർണയം',hrx:'മരുന്നുകൾ',hhow:'എങ്ങനെ കഴിക്കണം',hdur:'എത്ര ദിവസം',hadv:'നിർദ്ദേശങ്ങൾ',htest:'അടുത്ത സന്ദർശനത്തിന് മുമ്പുള്ള പരിശോധനകൾ',hnext:'അടുത്ത സന്ദർശനം',m:'രാവിലെ',a:'ഉച്ചയ്ക്ക്',e:'വൈകുന്നേരം',n:'രാത്രി',sos:'ആവശ്യമുള്ളപ്പോൾ',w1:'ആഴ്ചയിൽ ഒരിക്കൽ',w2:'ആഴ്ചയിൽ രണ്ടു തവണ',w3:'ആഴ്ചയിൽ മൂന്നു തവണ',alt:'ഒന്നിടവിട്ട ദിവസങ്ങളിൽ',af:'ഭക്ഷണത്തിന് ശേഷം',bf:'ഭക്ഷണത്തിന് മുമ്പ്',wm:'ഭക്ഷണത്തോടൊപ്പം',bt:'ഉറങ്ങുന്നതിന് മുമ്പ്',es:'വെറും വയറ്റിൽ',d:['ദിവസം','ദിവസം'],wk:['ആഴ്ച','ആഴ്ച'],mo:['മാസം','മാസം'],dz:['ഡോസ്','ഡോസ്'],cont:'തുടരുക, നിർത്തരുത്',
+  adv:['ഉപ്പ് ദിവസം 5 ഗ്രാമിൽ കുറവ് (ഒരു ചെറിയ സ്പൂൺ)','വെള്ളം/ദ്രാവകം ദിവസം 1 മുതൽ 1.5 ലിറ്റർ വരെ മാത്രം','പൊട്ടാസ്യം കുറഞ്ഞ ഭക്ഷണം: ഇളനീർ, പഴച്ചാറുകൾ, ഉണക്കപ്പഴങ്ങൾ ഒഴിവാക്കുക','വേദനസംഹാരികൾ കഴിക്കരുത് (ഡൈക്ലോഫെനാക്, ഐബുപ്രോഫെൻ, നിമെസുലൈഡ്)','ചോദിക്കാതെ പച്ചമരുന്നുകളോ ആയുർവേദ മരുന്നുകളോ കഴിക്കരുത്','ദിവസവും BP പരിശോധിച്ച് രേഖ കൊണ്ടുവരിക','വെറും വയറ്റിലും ഭക്ഷണത്തിന് ശേഷവും ഷുഗർ പരിശോധിക്കുക','പ്രോട്ടീൻ: ശരീരഭാരം ഓരോ കിലോയ്ക്കും ദിവസം 0.8 ഗ്രാം','ദിവസം 3 ലിറ്റർ വെള്ളം കുടിക്കുക','ദിവസവും 30 മിനിറ്റ് നടക്കുക']},
+ te:{hdx:'రోగ నిర్ధారణ',hrx:'మందులు',hhow:'ఎలా వేసుకోవాలి',hdur:'ఎన్ని రోజులు',hadv:'సలహా',htest:'తదుపరి సందర్శనకు ముందు పరీక్షలు',hnext:'తదుపరి సందర్శన',m:'ఉదయం',a:'మధ్యాహ్నం',e:'సాయంత్రం',n:'రాత్రి',sos:'అవసరమైనప్పుడు',w1:'వారానికి ఒకసారి',w2:'వారానికి రెండుసార్లు',w3:'వారానికి మూడుసార్లు',alt:'రోజు విడిచి రోజు',af:'భోజనం తర్వాత',bf:'భోజనానికి ముందు',wm:'భోజనంతో',bt:'నిద్రపోయే ముందు',es:'పరగడుపున',d:['రోజు','రోజులు'],wk:['వారం','వారాలు'],mo:['నెల','నెలలు'],dz:['డోసు','డోసులు'],cont:'కొనసాగించండి, ఆపవద్దు',
+  adv:['ఉప్పు రోజుకు 5 గ్రాముల కంటే తక్కువ (ఒక చిన్న చెంచా)','నీరు/ద్రవాలు రోజుకు 1 నుండి 1.5 లీటర్లు మాత్రమే','తక్కువ పొటాషియం ఆహారం: కొబ్బరి నీళ్లు, పండ్ల రసాలు, డ్రై ఫ్రూట్స్ మానండి','నొప్పి మాత్రలు వేసుకోవద్దు (డైక్లోఫెనాక్, ఐబుప్రోఫెన్, నిమెసులైడ్)','అడగకుండా మూలికా లేదా ఆయుర్వేద మందులు వేసుకోవద్దు','రోజూ BP చూసుకుని రికార్డు తీసుకురండి','పరగడుపున మరియు భోజనం తర్వాత షుగర్ చూసుకోండి','ప్రోటీన్: శరీర బరువు ప్రతి కిలోకు రోజుకు 0.8 గ్రాములు','రోజుకు 3 లీటర్ల నీరు తాగండి','రోజూ 30 నిమిషాలు నడవండి']},
+ or:{hdx:'ରୋଗ ନିର୍ଣ୍ଣୟ',hrx:'ଔଷଧ',hhow:'କିପରି ଖାଇବେ',hdur:'କେତେ ଦିନ',hadv:'ପରାମର୍ଶ',htest:'ପରବର୍ତ୍ତୀ ସାକ୍ଷାତ ପୂର୍ବରୁ ପରୀକ୍ଷା',hnext:'ପରବର୍ତ୍ତୀ ସାକ୍ଷାତ',m:'ସକାଳେ',a:'ମଧ୍ୟାହ୍ନରେ',e:'ସନ୍ଧ୍ୟାରେ',n:'ରାତିରେ',sos:'ଆବଶ୍ୟକ ହେଲେ',w1:'ସପ୍ତାହରେ ଥରେ',w2:'ସପ୍ତାହରେ ଦୁଇଥର',w3:'ସପ୍ତାହରେ ତିନିଥର',alt:'ଦିନେ ଛାଡ଼ି ଦିନେ',af:'ଖାଇବା ପରେ',bf:'ଖାଇବା ପୂର୍ବରୁ',wm:'ଖାଇବା ସହିତ',bt:'ଶୋଇବା ସମୟରେ',es:'ଖାଲି ପେଟରେ',d:['ଦିନ','ଦିନ'],wk:['ସପ୍ତାହ','ସପ୍ତାହ'],mo:['ମାସ','ମାସ'],dz:['ଡୋଜ','ଡୋଜ'],cont:'ଜାରି ରଖନ୍ତୁ, ବନ୍ଦ କରନ୍ତୁ ନାହିଁ',
+  adv:['ଲୁଣ ଦିନକୁ 5 ଗ୍ରାମରୁ କମ୍ (ଗୋଟିଏ ଛୋଟ ଚାମଚ)','ପାଣି/ତରଳ ଦିନକୁ କେବଳ 1 ରୁ 1.5 ଲିଟର','କମ୍ ପୋଟାସିୟମ୍ ଖାଦ୍ୟ: ପଇଡ଼ ପାଣି, ଫଳ ରସ, ଶୁଖିଲା ଫଳ ଖାଆନ୍ତୁ ନାହିଁ','ଯନ୍ତ୍ରଣା ନିବାରକ ଔଷଧ ଖାଆନ୍ତୁ ନାହିଁ (ଡାଇକ୍ଲୋଫେନାକ୍, ଆଇବୁପ୍ରୋଫେନ୍, ନିମେସୁଲାଇଡ୍)','ନ ପଚାରି ଜଡ଼ିବୁଟି କିମ୍ବା ଆୟୁର୍ବେଦିକ ଔଷଧ ଖାଆନ୍ତୁ ନାହିଁ','ପ୍ରତିଦିନ BP ଯାଞ୍ଚ କରି ରେକର୍ଡ ଆଣନ୍ତୁ','ଖାଲି ପେଟରେ ଓ ଖାଇବା ପରେ ସୁଗାର ଯାଞ୍ଚ କରନ୍ତୁ','ପ୍ରୋଟିନ୍: ଶରୀରର ପ୍ରତି କିଲୋ ଓଜନ ପାଇଁ ଦିନକୁ 0.8 ଗ୍ରାମ','ଦିନକୁ 3 ଲିଟର ପାଣି ପିଅନ୍ତୁ','ପ୍ରତିଦିନ 30 ମିନିଟ୍ ଚାଲନ୍ତୁ']},
+ bn:{hdx:'রোগনির্ণয়',hrx:'ওষুধ',hhow:'কীভাবে খাবেন',hdur:'কত দিন',hadv:'পরামর্শ',htest:'পরের সাক্ষাতের আগে পরীক্ষা',hnext:'পরের সাক্ষাৎ',m:'সকালে',a:'দুপুরে',e:'সন্ধ্যায়',n:'রাতে',sos:'প্রয়োজন হলে',w1:'সপ্তাহে একবার',w2:'সপ্তাহে দুবার',w3:'সপ্তাহে তিনবার',alt:'একদিন অন্তর',af:'খাওয়ার পরে',bf:'খাওয়ার আগে',wm:'খাবারের সাথে',bt:'ঘুমানোর আগে',es:'খালি পেটে',d:['দিন','দিন'],wk:['সপ্তাহ','সপ্তাহ'],mo:['মাস','মাস'],dz:['ডোজ','ডোজ'],cont:'চালিয়ে যান, বন্ধ করবেন না',
+  adv:['লবণ দিনে 5 গ্রামের কম (এক ছোট চামচ)','জল/তরল দিনে মাত্র 1 থেকে 1.5 লিটার','কম পটাশিয়াম খাবার: ডাবের জল, ফলের রস, শুকনো ফল এড়িয়ে চলুন','ব্যথার ওষুধ খাবেন না (ডাইক্লোফেনাক, আইবুপ্রোফেন, নিমেসুলাইড)','জিজ্ঞাসা না করে ভেষজ বা আয়ুর্বেদিক ওষুধ খাবেন না','প্রতিদিন BP মাপুন এবং রেকর্ড সঙ্গে আনুন','খালি পেটে ও খাওয়ার পরে সুগার মাপুন','প্রোটিন: শরীরের প্রতি কেজি ওজনে দিনে 0.8 গ্রাম','দিনে 3 লিটার জল পান করুন','প্রতিদিন 30 মিনিট হাঁটুন']},
+ pa:{hdx:'ਨਿਦਾਨ',hrx:'ਦਵਾਈਆਂ',hhow:'ਕਿਵੇਂ ਲੈਣੀ ਹੈ',hdur:'ਕਿੰਨੇ ਦਿਨ',hadv:'ਸਲਾਹ',htest:'ਅਗਲੀ ਮੁਲਾਕਾਤ ਤੋਂ ਪਹਿਲਾਂ ਟੈਸਟ',hnext:'ਅਗਲੀ ਮੁਲਾਕਾਤ',m:'ਸਵੇਰੇ',a:'ਦੁਪਹਿਰੇ',e:'ਸ਼ਾਮ ਨੂੰ',n:'ਰਾਤ ਨੂੰ',sos:'ਲੋੜ ਪੈਣ ਤੇ',w1:'ਹਫ਼ਤੇ ਵਿੱਚ ਇੱਕ ਵਾਰ',w2:'ਹਫ਼ਤੇ ਵਿੱਚ ਦੋ ਵਾਰ',w3:'ਹਫ਼ਤੇ ਵਿੱਚ ਤਿੰਨ ਵਾਰ',alt:'ਇੱਕ ਦਿਨ ਛੱਡ ਕੇ',af:'ਖਾਣੇ ਤੋਂ ਬਾਅਦ',bf:'ਖਾਣੇ ਤੋਂ ਪਹਿਲਾਂ',wm:'ਖਾਣੇ ਦੇ ਨਾਲ',bt:'ਸੌਣ ਵੇਲੇ',es:'ਖਾਲੀ ਪੇਟ',d:['ਦਿਨ','ਦਿਨ'],wk:['ਹਫ਼ਤਾ','ਹਫ਼ਤੇ'],mo:['ਮਹੀਨਾ','ਮਹੀਨੇ'],dz:['ਖੁਰਾਕ','ਖੁਰਾਕਾਂ'],cont:'ਜਾਰੀ ਰੱਖੋ, ਬੰਦ ਨਾ ਕਰੋ',
+  adv:['ਲੂਣ ਦਿਨ ਵਿੱਚ 5 ਗ੍ਰਾਮ ਤੋਂ ਘੱਟ (ਇੱਕ ਛੋਟਾ ਚਮਚ)','ਪਾਣੀ/ਤਰਲ ਦਿਨ ਵਿੱਚ ਸਿਰਫ਼ 1 ਤੋਂ 1.5 ਲੀਟਰ','ਘੱਟ ਪੋਟਾਸ਼ੀਅਮ ਵਾਲਾ ਖਾਣਾ: ਨਾਰੀਅਲ ਪਾਣੀ, ਫਲਾਂ ਦਾ ਜੂਸ, ਸੁੱਕੇ ਮੇਵੇ ਨਾ ਲਓ','ਦਰਦ ਦੀਆਂ ਦਵਾਈਆਂ ਨਾ ਲਓ (ਡਾਈਕਲੋਫੇਨੈਕ, ਆਈਬੂਪ੍ਰੋਫੇਨ, ਨਿਮੇਸੁਲਾਈਡ)','ਪੁੱਛੇ ਬਿਨਾਂ ਜੜੀ-ਬੂਟੀ ਜਾਂ ਆਯੁਰਵੈਦਿਕ ਦਵਾਈਆਂ ਨਾ ਲਓ','ਰੋਜ਼ BP ਚੈੱਕ ਕਰੋ ਅਤੇ ਰਿਕਾਰਡ ਨਾਲ ਲਿਆਓ','ਖਾਲੀ ਪੇਟ ਅਤੇ ਖਾਣੇ ਤੋਂ ਬਾਅਦ ਸ਼ੂਗਰ ਚੈੱਕ ਕਰੋ','ਪ੍ਰੋਟੀਨ: ਸਰੀਰ ਦੇ ਹਰ ਕਿਲੋ ਭਾਰ ਲਈ ਰੋਜ਼ 0.8 ਗ੍ਰਾਮ','ਦਿਨ ਵਿੱਚ 3 ਲੀਟਰ ਪਾਣੀ ਪੀਓ','ਰੋਜ਼ 30 ਮਿੰਟ ਸੈਰ ਕਰੋ']},
+ as:{hdx:'ৰোগ নিৰ্ণয়',hrx:'ঔষধ',hhow:'কেনেকৈ খাব',hdur:'কিমান দিন',hadv:'পৰামৰ্শ',htest:'পৰৱৰ্তী সাক্ষাতৰ আগতে পৰীক্ষা',hnext:'পৰৱৰ্তী সাক্ষাৎ',m:'পুৱা',a:'দুপৰীয়া',e:'সন্ধিয়া',n:'ৰাতি',sos:'প্ৰয়োজন হ’লে',w1:'সপ্তাহত এবাৰ',w2:'সপ্তাহত দুবাৰ',w3:'সপ্তাহত তিনিবাৰ',alt:'এদিনৰ মূৰে মূৰে',af:'খোৱাৰ পিছত',bf:'খোৱাৰ আগতে',wm:'খাদ্যৰ সৈতে',bt:'শোৱাৰ সময়ত',es:'খালী পেটত',d:['দিন','দিন'],wk:['সপ্তাহ','সপ্তাহ'],mo:['মাহ','মাহ'],dz:['ডোজ','ডোজ'],cont:'খাই থাকক, বন্ধ নকৰিব',
+  adv:['নিমখ দিনে 5 গ্ৰামতকৈ কম (এটা সৰু চামুচ)','পানী/তৰল দিনে মাত্ৰ 1 ৰ পৰা 1.5 লিটাৰ','কম পটাছিয়ামযুক্ত খাদ্য: ডাবৰ পানী, ফলৰ ৰস, শুকান ফল নাখাব','বিষৰ ঔষধ নাখাব (ডাইক্লোফেনাক, আইবুপ্ৰফেন, নিমেছুলাইড)','নুসুধাকৈ বনৌষধি বা আয়ুৰ্বেদিক ঔষধ নাখাব','প্ৰতিদিনে BP পৰীক্ষা কৰি ৰেকৰ্ড লৈ আহক','খালী পেটত আৰু খোৱাৰ পিছত চুগাৰ পৰীক্ষা কৰক','প্ৰ’টিন: শৰীৰৰ প্ৰতি কিলো ওজনত দিনে 0.8 গ্ৰাম','দিনে 3 লিটাৰ পানী খাওক','প্ৰতিদিনে 30 মিনিট খোজ কাঢ়ক']}
+};
+TR.en.adv=null; // English advice is the ADVICE list itself
+const TIM_K={'After food':'af','Before food':'bf','With meals':'wm','At bedtime':'bt','Empty stomach':'es'};
+const FRQ_K={'SOS':'sos','Once weekly':'w1','Twice weekly':'w2','Thrice weekly':'w3','Alternate days':'alt'};
+function L_(lang){return TR[lang]||TR.en}
+function freqLocal(f,lang){const L=L_(lang);if(FRQ_K[f])return L[FRQ_K[f]];
+  const parts=String(f||'').split('-');if(parts.length<3||parts.length>4)return '';
+  const slots=parts.length===4?['m','a','e','n']:['m','a','n'];
+  return parts.map((v,i)=>v==='0'?'':(v==='1'?L[slots[i]]:L[slots[i]]+' '+v)).filter(Boolean).join(' – ')}
+function timingLocal(t,lang){const k=TIM_K[t];return k?L_(lang)[k]:''}
+function durLocal(d,lang){const L=L_(lang);if(d==='Continue')return L.cont;
+  const m=String(d||'').match(/^(\d+)\s*(day|week|month|dose)s?$/i);if(!m)return '';
+  const u={day:'d',week:'wk',month:'mo',dose:'dz'}[m[2].toLowerCase()];return m[1]+' '+L[u][+m[1]===1?0:1]}
+function adviceLocal(a,lang){if(lang==='en')return '';const i=ADVICE.indexOf(a);if(i>=0)return TR[lang].adv[i];
+  return ((db.settings.trans||{})[lang]||{})[a]||''}
+function ensureFont(lang){const f=LFONT[lang];if(!f)return Promise.resolve();const id='font_'+f.replace(/\s/g,'');
+  if(!document.getElementById(id)){const l=document.createElement('link');l.id=id;l.rel='stylesheet';l.href='https://fonts.googleapis.com/css2?family='+f.replace(/\s/g,'+')+':wght@400;600&display=swap';document.head.appendChild(l)}
+  try{return document.fonts?document.fonts.load('14px "'+f+'"',L_(lang).hrx).catch(()=>{}):Promise.resolve()}catch(e){return Promise.resolve()}}
+function rxLang(p){return (p&&p.lang)||db.settings.defaultLang||'en'}
+
+
 /* ---------- storage ---------- */
 const KEY='nephrorx-v1';
 let storageOK=true, saveT=null;
@@ -335,6 +393,7 @@ function seed(){
 }
 let db=load()||seed();
 db.settings.templates=db.settings.templates||TEMPLATES0;
+['phr','pins','drugUse','trans'].forEach(k=>{db.settings[k]=db.settings[k]||{}});
 let cur={pid:null,vid:null,draft:null};
 let stage={}; // pasted values awaiting confirmation: {date:{k:true}}
 
@@ -370,7 +429,7 @@ function renderEmpty(){
 function openPatient(pid,vid){
   cur.pid=pid;const vs=visitsOf(pid);
   if(vid){cur.vid=vid;cur.draft=null}
-  else{const t=vs.find(v=>v.date===today());if(t){cur.vid=t.id;cur.draft=null}else{cur.vid=null;cur.draft=newDraft(pid)}}
+  else{const t=vs.find(v=>v.date===today());if(t){cur.vid=t.id;cur.draft=null}else{cur.vid=null;cur.draft=prefillFromLast(newDraft(pid))}}
   stage={};renderList();renderSheet();
 }
 function renderVisitChips(){
@@ -404,24 +463,31 @@ function renderSheet(){
   </section>
   <section class="card"><h2>Complaints &amp; diagnosis</h2>
     <div class="grid2">
-      <label class="f">Chief complaints<textarea class="inp" id="v_cc" data-f="complaints" placeholder="e.g. Swelling of feet for 2 weeks">${esc(v.complaints)}</textarea></label>
-      <label class="f">Clinical notes (not printed)<textarea class="inp" id="v_notes" data-f="notes">${esc(v.notes)}</textarea></label>
+      <div><label class="f">Chief complaints<textarea class="inp" id="v_cc" data-f="complaints" data-smart="cc" placeholder="Start typing: suggestions appear below">${esc(v.complaints)}</textarea></label><div class="sugg" id="sg_cc"></div></div>
+      <div><label class="f">Past history (kept for every visit)<textarea class="inp" id="p_hx" data-pf="history" data-smart="hx" placeholder="e.g. Diabetes since 10 years">${esc(p.history)}</textarea></label><div class="sugg" id="sg_hx"></div></div>
+      <div style="grid-column:1/-1"><label class="f">Clinical notes (not printed)<textarea class="inp" id="v_notes" data-f="notes" data-smart="notes">${esc(v.notes)}</textarea></label><div class="sugg" id="sg_notes"></div></div>
     </div>
     <div style="margin-top:10px" class="chips" id="dchips"></div>
     <div class="row" style="margin-top:8px"><input class="inp" id="dx_add" placeholder="Type another diagnosis and press Enter" style="max-width:380px"></div>
   </section>
   <section class="card"><h2>Investigations <span class="hint" style="text-transform:none;letter-spacing:0">each column is one report date · Enter moves down</span>
-    <span class="sp"><button class="btn sm" data-a="paste">Paste report text</button></span></h2>
+    <span class="sp"><button class="btn sm pri" data-a="paste">Add report: photo, voice or text</button></span></h2>
     <div class="row" style="margin-bottom:8px"><label class="f" style="flex-direction:row;align-items:center;gap:6px">Report date <input class="inp" type="date" id="lab_date" value="${today()}" style="width:auto"></label>
       <button class="btn sm" data-a="addCol">Add column</button>
       <span style="flex:1"></span>
       <input class="inp" id="ct_name" placeholder="Add a test row, e.g. C3 (mg/dL)" style="max-width:240px"><button class="btn sm" data-a="addTest">Add row</button></div>
     <div class="scroll" id="labwrap"></div>
   </section>
+  <section class="card"><h2>Scans, photos &amp; documents
+    <span class="sp"><select class="inp" id="ph_kind" style="width:auto;padding:4px 8px" aria-label="Type">${KINDS.map(k=>`<option>${esc(k)}</option>`).join('')}</select>
+    <label class="btn sm pri" for="ph_in">Take or add photo</label><input type="file" id="ph_in" accept="image/*" multiple hidden></span></h2>
+    <div class="files" id="files"></div>
+  </section>
   <section class="card"><h2>℞ Medicines
     <span class="sp"><button class="btn sm" data-a="copyLast">Copy last prescription</button>
     <select class="inp" id="tpl" style="width:auto;padding:4px 8px"><option value="">Apply template…</option>${tpl}</select>
     <button class="btn sm" data-a="saveTpl">Save as template</button></span></h2>
+    ${v.repeatFrom&&v.rx.some(r=>r.src==='prev')?`<div class="warn row" style="margin-bottom:8px"><span style="flex:1;min-width:200px">Medicines from the <b>${dmy(v.repeatFrom)}</b> visit are ready below. Change doses, remove with ×, or add new ones.</span><button class="btn sm" data-a="clearRx">Start blank instead</button></div>`:''}
     <div class="scroll" style="border:0"><table class="rx" id="rxt"></table></div>
     <div style="margin-top:8px"><input class="inp" id="drug_q" enterkeyhint="enter" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Type a medicine (e.g. telmi, bicarb, tacro) and press Enter" autocomplete="off"></div>
     <div class="sugg" id="sugg"></div>
@@ -430,7 +496,7 @@ function renderSheet(){
     <div class="chips" id="achips"></div>
     <div class="row" style="margin-top:8px"><input class="inp" id="adv_add" placeholder="Type other advice and press Enter" style="max-width:480px"></div>
     <div class="grid2" style="margin-top:12px">
-      <label class="f">Tests before next visit<input class="inp" id="v_tests" data-f="testsAdvised" value="${esc(v.testsAdvised)}" placeholder="S. creatinine, electrolytes, CBC"></label>
+      <div><label class="f">Tests before next visit<input class="inp" id="v_tests" data-f="testsAdvised" data-smart="tests" value="${esc(v.testsAdvised)}" placeholder="S. creatinine, electrolytes, CBC"></label><div class="sugg" id="sg_tests"></div></div>
       <label class="f">Next visit<div class="row"><input class="inp" type="date" id="v_fu" data-f="followUp" value="${esc(v.followUp)}" style="width:auto">
         ${[7,15,30,60,90].map(n=>`<button class="btn sm" data-a="fu" data-n="${n}">${n<30?n+' d':n/30+' m'}</button>`).join('')}</div></label>
     </div>
@@ -439,12 +505,14 @@ function renderSheet(){
     <button class="btn" data-a="whatsapp">Send on WhatsApp</button>
     <button class="btn pri" data-a="preview">Preview prescription</button></div>
   </div>`;
-  renderVisitChips();renderDx();renderLabs();renderRx();renderAdvice();renderSugg('');
+  renderVisitChips();renderDx();renderLabs();renderRx();renderAdvice();renderSugg('');renderFiles();
+  $('#ph_in').addEventListener('change',async e=>{const fs=[...e.target.files];e.target.value='';if(!fs.length)return;setStatus('Saving photo…');
+    const n=await addFiles(fs,$('#ph_kind').value,today(),'');setStatus(n?`Saved ${n} photo${n>1?'s':''}`:'Only photos can be added here')});
 }
 function bmi(v){const w=parseFloat(v.vitals.wt),h=parseFloat(v.vitals.ht)/100;return w&&h?(w/(h*h)).toFixed(1):''}
-function renderDx(){const v=curVisit();const all=DIAG.concat(v.diagnosis.filter(d=>!DIAG.includes(d)));
+function renderDx(){const v=curVisit();const base=DIAG.concat(topLearned('dx',DIAG,10));const all=base.concat(v.diagnosis.filter(d=>!base.includes(d)));
   $('#dchips').innerHTML=all.map(d=>`<button class="chip${v.diagnosis.includes(d)?' on':''}" data-a="dx" data-v="${esc(d)}">${esc(d)}</button>`).join('')}
-function renderAdvice(){const v=curVisit();const all=ADVICE.concat(v.advice.filter(d=>!ADVICE.includes(d)));
+function renderAdvice(){const v=curVisit();const base=ADVICE.concat(topLearned('adv',ADVICE,10));const all=base.concat(v.advice.filter(d=>!base.includes(d)));
   $('#achips').innerHTML=all.map(d=>`<button class="chip${v.advice.includes(d)?' on':''}" data-a="adv" data-v="${esc(d)}">${esc(d)}</button>`).join('')}
 
 function renderLabs(){
@@ -465,7 +533,7 @@ function renderRx(){
   const v=curVisit();
   const opt=(list,val)=>(list.includes(val)||!val?list:[val].concat(list)).map(o=>`<option${o===val?' selected':''}>${esc(o)}</option>`).join('');
   $('#rxt').innerHTML=v.rx.length?`<tbody>${v.rx.map((r,i)=>`<tr>
-    <td class="no">${i+1}</td>
+    <td class="no">${i+1}${r.src==='prev'?'<div class="prevtag" title="Same as last visit">LAST</div>':''}</td>
     <td><input class="drug" data-rx="${i}" data-rf="drug" value="${esc(r.drug)}" aria-label="Medicine"></td>
     <td style="width:120px"><select data-rx="${i}" data-rf="freq" aria-label="Frequency">${opt(FREQS,r.freq)}</select></td>
     <td style="width:150px"><select data-rx="${i}" data-rf="timing" aria-label="When">${opt(TIMINGS,r.timing)}</select></td>
@@ -473,40 +541,49 @@ function renderRx(){
     <td style="min-width:120px"><input data-rx="${i}" data-rf="note" value="${esc(r.note)}" placeholder="note" aria-label="Note"></td>
     <td style="width:60px;white-space:nowrap"><button class="x" data-a="rxUp" data-i="${i}" title="Move up">↑</button><button class="x" data-a="rxDel" data-i="${i}" title="Remove">×</button></td></tr>`).join('')}</tbody>`
    :'<tbody><tr><td class="hint" style="padding:10px">No medicines yet.</td></tr></tbody>';
+  if($('#sugg'))renderSugg(($('#drug_q')||{}).value||'');
 }
 function drugPool(){const mine=(db.settings.myDrugs||[]).filter(m=>!FORMULARY.some(f=>f[0]===m[0]));return mine.concat(FORMULARY)}
 function renderSugg(q){
   q=q.trim().toLowerCase();const pool=drugPool();
-  const hits=q?pool.filter(d=>d[0].toLowerCase().replace(/^(tab|cap|inj|sachet|syp)\.?\s*/,'').includes(q)||d[0].toLowerCase().includes(q)).slice(0,7):[];
-  $('#sugg').innerHTML=hits.map((d,i)=>`<button data-a="addDrug" data-i="${pool.indexOf(d)}">${esc(d[0])} <span class="hint">${esc(d[1])}</span></button>`).join('')+
+  const U=drugUse();const used=d=>(U[d[0]]&&U[d[0]].n)||0;
+  const inRx=new Set(curVisit().rx.map(r=>r.drug));
+  const hits=q?pool.filter(d=>d[0].toLowerCase().replace(/^(tab|cap|inj|sachet|syp)\.?\s*/,'').includes(q)||d[0].toLowerCase().includes(q)).sort((a,b)=>used(b)-used(a)).slice(0,7)
+    :pool.filter(d=>used(d)>0&&!inRx.has(d[0])).sort((a,b)=>used(b)-used(a)).slice(0,8);
+  $('#sugg').innerHTML=(!q&&hits.length?'<span class="hint" style="align-self:center">Your usual:</span>':'')+hits.map((d,i)=>`<button data-a="addDrug" data-i="${pool.indexOf(d)}">${esc(d[0])} <span class="hint">${esc(d[1])}</span></button>`).join('')+
    (q&&!hits.some(h=>h[0].toLowerCase()===q)?`<button data-a="addDrugFree">Add “${esc($('#drug_q').value.trim())}” as typed</button>`:'');
 }
-function addRx(d){const v=curVisit();v.rx.push({drug:d[0],freq:d[1]||'1-0-0',timing:d[2]||'After food',dur:d[3]||'1 month',note:''});touchVisit();renderRx();
+function addRx(d){const v=curVisit();const u=drugUse()[d[0]]||{};const r={drug:d[0],freq:u.freq||d[1]||'1-0-0',timing:u.timing||d[2]||'After food',dur:u.dur||d[3]||'1 month',note:''};
+  v.rx.push(r);noteDrug(r);drugUse()[d[0]].n++;touchVisit();renderRx();
   const q=$('#drug_q');q.value='';renderSugg('');q.focus()}
 
 /* ---------- printable prescription ---------- */
-function rxHTML(){
+function rxHTML(langOverride){
   const s=db.settings,p=P(cur.pid),v=curVisit();
+  const lang=langOverride||rxLang(p),L=L_(lang),loc=lang!=='en';
+  const H=k=>TR.en[k]+(loc?` <span class="loc">· ${esc(L[k])}</span>`:'');
+  const sub=t=>t?`<div class="sub">${esc(t)}</div>`:'';const lo=t=>loc&&t?`<div class="loc">${esc(t)}</div>`:'';
   const dates=Object.keys(p.labs).sort().filter(d=>allTests().some(t=>labVal(p,d,t.k))).slice(-5);
   const tests=allTests().filter(t=>dates.some(d=>labVal(p,d,t.k)));
   const vit=[['BP',v.vitals.bp,'mmHg'],['Pulse',v.vitals.pulse,'/min'],['Weight',v.vitals.wt,'kg'],['Height',v.vitals.ht,'cm'],['BMI',bmi(v),''],['SpO₂',v.vitals.spo2,'%'],['RBS',v.vitals.rbs,'mg/dL']].filter(x=>x[1]);
   const usesFreq=v.rx.some(r=>/^[\d½]/.test(r.freq));
-  return `<div class="paper">
+  return `<div class="paper" lang="${lang==='en'?'en':lang}"${loc?` style="font-family:var(--f-body),'${LFONT[lang]}'"`:''}>
    <div class="lh"><div><div class="dr">${esc(s.dr)}</div><div>${esc(s.quals)}</div><div>${esc(s.reg)}</div></div>
      <div class="r"><b>${esc(s.clinic)}</b><div>${esc(s.address)}</div><div>${esc(s.phone)}</div><div>${esc(s.timings)}</div></div></div>
    <div class="pt"><span><b>Name:</b> ${esc(p.name)}</span><span><b>Age/Sex:</b> ${ageAt(p,v.date)} y / ${esc(p.sex)}</span><span><b>UHID:</b> ${esc(p.uhid)}</span><span><b>Phone:</b> ${esc(p.phone)}</span><span><b>Date:</b> ${dmy(v.date)}</span></div>
    ${vit.length?`<div class="pt">${vit.map(x=>`<span><b>${x[0]}:</b> ${esc(x[1])} ${x[2]}</span>`).join('')}</div>`:''}
-   ${v.complaints?`<h4>Complaints</h4><div>${esc(v.complaints).replace(/\n/g,'<br>')}</div>`:''}
-   ${v.diagnosis.length?`<h4>Diagnosis</h4><div>${v.diagnosis.map(esc).join(' · ')}</div>`:''}
+   ${v.complaints.trim()?`<h4>Complaints</h4><div>${esc(tidy(v.complaints)).replace(/\n/g,'<br>')}</div>`:''}
+   ${(p.history||'').trim()?`<h4>Past history</h4><div>${esc(tidy(p.history)).replace(/\n/g,'<br>')}</div>`:''}
+   ${v.diagnosis.length?`<h4>${H('hdx')}</h4><div>${v.diagnosis.map(esc).join(' · ')}</div>`:''}
    ${tests.length?`<h4>Investigations</h4><table class="lt"><thead><tr><th>Test</th>${dates.map(d=>`<th>${dmy(d)}</th>`).join('')}</tr></thead><tbody>
      ${tests.map(t=>`<tr><td>${esc(t.l)} <span style="color:#666">${esc(t.u)}</span></td>${dates.map(d=>{const x=labVal(p,d,t.k),f=flag(t,x);return `<td${f?' style="font-weight:700"':''}>${esc(x)}${f==='hi'?' ↑':f==='lo'?' ↓':''}</td>`}).join('')}</tr>`).join('')}</tbody></table>
      <div class="legend">eGFR by CKD-EPI 2021 (creatinine). ↑ above, ↓ below the usual range.</div>`:''}
-   ${v.rx.length?`<div class="rxsym">℞</div><table><thead><tr><th style="width:24px">#</th><th>Medicine</th><th>Dose</th><th>When</th><th>Duration</th></tr></thead><tbody>
-     ${v.rx.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.drug)}</b>${r.note?`<div>${esc(r.note)}</div>`:''}</td><td>${esc(r.freq)}${freqText(r.freq)?`<div style="color:#555;font-size:11px">${freqText(r.freq)}</div>`:''}</td><td>${esc(r.timing==='—'?'':r.timing)}</td><td>${esc(r.dur)}</td></tr>`).join('')}</tbody></table>
-     ${usesFreq?'<div class="legend">1-0-1 means Morning – Afternoon – Night (सकाळ – दुपार – रात्र / सुबह – दोपहर – रात).</div>':''}`:''}
-   ${v.advice.length?`<h4>Advice</h4><ul>${v.advice.map(a=>`<li>${esc(a)}</li>`).join('')}</ul>`:''}
-   ${v.testsAdvised?`<h4>Tests before next visit</h4><div>${esc(v.testsAdvised)}</div>`:''}
-   ${v.followUp?`<h4>Next visit</h4><div><b>${dmy(v.followUp)}</b></div>`:''}
+   ${v.rx.length?`<div class="rxsym">℞ <span style="font-family:inherit;font-size:13px;font-weight:600">${H('hrx')}</span></div><table><thead><tr><th style="width:24px">#</th><th>Medicine</th><th>Dose${loc?`<div class="loc">${esc(L.hhow)}</div>`:''}</th><th>When</th><th>Duration${loc?`<div class="loc">${esc(L.hdur)}</div>`:''}</th></tr></thead><tbody>
+     ${v.rx.map((r,i)=>`<tr><td>${i+1}</td><td><b>${esc(r.drug)}</b>${r.note?`<div>${esc(r.note)}</div>`:''}</td><td>${esc(r.freq)}${sub(freqLocal(r.freq,'en'))}${lo(freqLocal(r.freq,lang))}</td><td>${esc(r.timing==='—'?'':r.timing)}${lo(timingLocal(r.timing,lang))}</td><td>${esc(r.dur)}${lo(durLocal(r.dur,lang))}</td></tr>`).join('')}</tbody></table>
+     ${usesFreq?`<div class="legend">1-0-1 = ${TR.en.m} – ${TR.en.a} – ${TR.en.n}${loc?` <span class="loc">(${esc(L.m)} – ${esc(L.a)} – ${esc(L.n)})</span>`:''}</div>`:''}`:''}
+   ${v.advice.length?`<h4>${H('hadv')}</h4><ul>${v.advice.map(a=>`<li>${esc(a)}${lo(adviceLocal(a,lang))}</li>`).join('')}</ul>`:''}
+   ${v.testsAdvised.trim()?`<h4>${H('htest')}</h4><div>${esc(tidy(v.testsAdvised))}</div>`:''}
+   ${v.followUp?`<h4>${H('hnext')}</h4><div><b>${dmy(v.followUp)}</b></div>`:''}
    <div class="sig"><div></div><div class="r"><b>${esc(s.dr)}</b><div>${esc(s.reg)}</div></div></div>
    ${linksHTML()}
    ${s.footer?`<div class="foot">${esc(s.footer)}</div>`:''}</div>`;
@@ -570,10 +647,12 @@ function waText(){
   const s=db.settings,p=P(cur.pid),v=curVisit();
   let t=`*${s.clinic}*\n${s.dr}, ${s.quals}\n\nPrescription for *${p.name}* (${ageAt(p,v.date)}/${p.sex}) · ${dmy(v.date)}\n`;
   if(v.diagnosis.length)t+=`Diagnosis: ${v.diagnosis.join(', ')}\n`;
-  if(v.rx.length)t+=`\n*Medicines*\n`+v.rx.map((r,i)=>`${i+1}. ${r.drug}: ${r.freq}${r.timing&&r.timing!=='—'?', '+r.timing.toLowerCase():''}, ${r.dur}${r.note?' ('+r.note+')':''}`).join('\n')+'\n';
-  if(v.advice.length)t+=`\n*Advice*\n`+v.advice.map(a=>'• '+a).join('\n')+'\n';
-  if(v.testsAdvised)t+=`\nTests before next visit: ${v.testsAdvised}\n`;
-  if(v.followUp)t+=`Next visit: *${dmy(v.followUp)}*\n`;
+  const lang=rxLang(p),L=L_(lang),loc=lang!=='en',hd=k=>TR.en[k]+(loc?' / '+L[k]:'');
+  if(v.rx.length)t+=`\n*${hd('hrx')}*\n`+v.rx.map((r,i)=>{const f=freqLocal(r.freq,lang)||r.freq,tm=loc?timingLocal(r.timing,lang):(r.timing!=='—'?r.timing.toLowerCase():''),du=(loc&&durLocal(r.dur,lang))||r.dur;
+    return `${i+1}. ${r.drug}: ${r.freq}${f&&f!==r.freq?' ('+f+')':''}${tm?', '+tm:''}, ${du}${r.note?' ('+r.note+')':''}`}).join('\n')+'\n';
+  if(v.advice.length)t+=`\n*${hd('hadv')}*\n`+v.advice.map(a=>'• '+(adviceLocal(a,lang)||a)).join('\n')+'\n';
+  if(v.testsAdvised.trim())t+=`\n${hd('htest')}: ${tidy(v.testsAdvised)}\n`;
+  if(v.followUp)t+=`${hd('hnext')}: *${dmy(v.followUp)}*\n`;
   if(s.linksOnWa!==false){const L=myLinks();if(L.length)t+='\n'+L.map(x=>`${x[0]}: ${x[1]}`).join('\n')+'\n'}
   return t+`\n${s.phone}`;
 }
@@ -644,6 +723,9 @@ function settingsForm(){
   openModal(`<h3>Clinic settings</h3><p class="hint">These print on the letterhead of every prescription.</p>
    ${F('dr','Doctor name')}${F('quals','Qualifications')}${F('reg','Registration number (as printed)')}${F('clinic','Clinic name')}${F('address','Clinic address')}${F('phone','Clinic phone')}${F('timings','Clinic timings')}
    <label class="f">Footer note<textarea class="inp" id="s_footer">${esc(s.footer)}</textarea></label>
+   <h3 style="font-size:16px;margin-top:6px">Prescription</h3>
+   <label class="f">Usual language for patients (you can change it per patient in the preview)<select class="inp" id="s_defaultLang">${Object.entries(LANGS).map(([k,n])=>`<option value="${k}"${k===(s.defaultLang||'en')?' selected':''}>${k==='en'?n:'English + '+n}</option>`).join('')}</select></label>
+   <label class="chk"><input type="checkbox" id="s_autoRepeat" ${s.autoRepeat!==false?'checked':''}>At a follow-up visit, have the last visit’s medicines, diagnosis and advice ready</label>
    <h3 style="font-size:16px;margin-top:6px">Your website &amp; app</h3>
    <p class="hint">Shown to patients so they can book, read about the clinic, and get your app.</p>
    ${F('website','Clinic website')}${F('appLink','Your app (Play Store / App Store link)')}${F('bookLink','Online appointment booking link')}
@@ -660,33 +742,20 @@ function settingsForm(){
     <button class="btn" data-a="exportCsv">Export patient list (CSV)</button></div>
    <div class="hint" id="csv_st" role="status"></div>
    <hr style="border:0;border-top:1px solid var(--line);width:100%">
+   <h3 style="font-size:16px">Your templates &amp; word suggestions</h3>
+   <p class="hint">Suggestions learn from what you type, on this device only. Templates are the ones you saved with ☆.</p>
+   ${Object.keys(FIELD_NAME).filter(f=>(phr().pins[f]||[]).length).map(f=>`<div><b>${FIELD_NAME[f]}</b><ul style="margin:4px 0;padding-left:18px">${phr().pins[f].map((t,i)=>`<li>${esc(t)} <button class="x" data-a="unpin" data-fl="${f}" data-i="${i}">remove</button></li>`).join('')}</ul></div>`).join('')||'<p class="hint">No saved templates yet.</p>'}
+   <div class="row"><button class="btn sm" data-a="forgetLearned">Clear learned words</button></div>
+   <hr style="border:0;border-top:1px solid var(--line);width:100%">
    <h3 style="font-size:16px">Backup</h3>
-   <p class="hint">All records live in this browser on this device. Make a backup copy regularly.</p>
+   <p class="hint">All records and photos live in this browser on this device. Make a backup copy every week; it includes the photos.</p>
    <div class="row"><button class="btn" data-a="export">Make a backup copy</button>
     <label class="btn" for="imp">Restore from a backup file</label><input type="file" id="imp" accept=".json,application/json" hidden></div>
    <div id="bk"></div>
    ${db.patients.some(p=>p.sample)?'<div class="row"><button class="btn" data-a="delSample">Remove the sample patient</button></div>':''}`);
   $('#imp_csv').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#csv_st').textContent=importPatientsCSV(String(r.result))};r.readAsText(f);e.target.value=''});
-  $('#imp').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.patients||!d.visits||!d.settings)throw 0;db=d;save();closeModal();cur={pid:null,vid:null,draft:null};renderList();renderEmpty()}catch(err){$('#bk').innerHTML='<div class="warn">That file is not a NephroRx backup.</div>'}};r.readAsText(f)});
+  $('#imp').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);if(!d.patients||!d.visits||!d.settings)throw 0;const files=d.files;delete d.files;db=d;['phr','pins','drugUse','trans'].forEach(k=>{db.settings[k]=db.settings[k]||{}});save();await restoreFiles(files);closeModal();cur={pid:null,vid:null,draft:null};renderList();renderEmpty()}catch(err){$('#bk').innerHTML='<div class="warn">That file is not a NephroRx backup.</div>'}};r.readAsText(f)});
 }
-function pasteForm(){
-  openModal(`<h3>Paste report text</h3>
-   <p class="hint">Paste text from a lab PDF or WhatsApp message, or type quickly, e.g. <code>cr 2.3 urea 80 k 5.6 hb 9.8</code>. You check every value before it goes in.</p>
-   <textarea class="inp" id="pt_txt" rows="7" autofocus placeholder="Serum Creatinine   2.31 mg/dL   0.6 - 1.2&#10;Potassium 5.6 mmol/L&#10;Haemoglobin 9.8 g/dL"></textarea>
-   <div class="row"><label class="f" style="flex-direction:row;align-items:center;gap:6px">Report date<input class="inp" type="date" id="pt_date" value="${today()}" style="width:auto"></label><button class="btn" data-a="readPaste">Read values</button></div>
-   <div id="pt_out"></div>`);
-}
-function readPaste(){
-  const {date,values}=parseReport($('#pt_txt').value);
-  if(date)$('#pt_date').value=date;
-  const tests=allTests().filter(t=>t.k in values);
-  $('#pt_out').innerHTML=tests.length?`<p class="hint">${date?'Report date found in the text and set above. ':''}Correct anything that looks wrong, then add.</p>
-   <div class="vit">${tests.map(t=>`<label class="f">${esc(t.l)} (${esc(t.u)})<input class="inp" data-pk="${t.k}" value="${esc(values[t.k])}"></label>`).join('')}</div>
-   <div class="mrow"><button class="btn" data-a="close">Cancel</button><button class="btn pri" data-a="applyPaste">Add to report column</button></div>`
-   :'<div class="warn">No test values were recognised. Check the test names, or type them straight into the grid.</div>';
-}
-
-
 /* ---------- PDF (A4) for WhatsApp / share sheet ---------- */
 let dl=null;
 try{if(framed&&window.claude&&window.claude.use)window.claude.use('downloads').then(x=>{dl=x},()=>{})}catch(e){}
@@ -701,7 +770,7 @@ async function makePdf(){
   host.innerHTML=rxHTML();document.body.appendChild(host);
   const paper=host.firstElementChild;paper.style.boxShadow='none';paper.style.maxWidth='794px';paper.style.width='794px';
   try{
-    if(document.fonts&&document.fonts.ready)await document.fonts.ready;
+    await ensureFont(rxLang(P(cur.pid)));if(document.fonts&&document.fonts.ready)await document.fonts.ready;
     const scale=2;const canvas=await window.html2canvas(paper,{scale,backgroundColor:'#ffffff',logging:false});
     const top=paper.getBoundingClientRect().top;
     const cuts=[...paper.querySelectorAll('tr,h4,li,.pt,.lh,.sig,.legend,.foot,.rxsym,.paper>div')].map(el=>Math.round((el.getBoundingClientRect().bottom-top)*scale)).sort((a,b)=>a-b);
@@ -750,6 +819,202 @@ async function sharePdf(){
   }catch(e){if(st)st.textContent=(e&&(e.name==='AbortError'||e.code==='declined'))?'Cancelled. Tap the button again to share.':'Sharing did not work here. Try again, or use Print.'}
 }
 
+/* ---------- smart suggestions & templates (learned on this device only) ---------- */
+const PHR_SEED={
+ cc:['Swelling of feet','Facial puffiness','Reduced urine output','Frothy urine','Burning while passing urine','Blood in urine','Breathlessness','Loss of appetite','Nausea / vomiting','Fatigue / weakness','Itching','Flank pain','Fever with chills','Cramps','No fresh complaints'],
+ hx:['Diabetes mellitus since  years','Hypertension since  years','Ischaemic heart disease','Stroke (CVA)','Hypothyroidism','On maintenance haemodialysis since ','Renal transplant (year )','Kidney stone surgery','Tuberculosis (treated)','No known drug allergy','Allergy: ','Smoker','Alcohol use'],
+ notes:['Counselled about diet and fluids','Explained dialysis options','AV fistula advised','Explained transplant work-up','Vaccination advised (Hep B)'],
+ tests:['S. creatinine','Electrolytes','CBC','Urine routine','Urine ACR','Urine PCR','Calcium, phosphorus','iPTH','Vitamin D','Iron studies','HbA1c','Lipid profile','Uric acid','USG KUB','Tacrolimus trough level']
+};
+const FIELD_NAME={cc:'Complaints',hx:'Past history',notes:'Clinical notes',tests:'Tests before next visit',dx:'Diagnosis',adv:'Advice'};
+function phr(){const s=db.settings;s.phr=s.phr||{};s.pins=s.pins||{};return s}
+function learn(field,text){const s=phr();const m=s.phr[field]=s.phr[field]||{};
+  String(text||'').split(/[\n,;]+/).map(x=>x.trim()).filter(x=>x.length>=3&&x.length<=90).forEach(x=>{m[x]=(m[x]||0)+1});save()}
+function fragmentOf(el){const v=el.value.slice(0,el.selectionStart==null?el.value.length:el.selectionStart);const i=Math.max(v.lastIndexOf('\n'),v.lastIndexOf(','),v.lastIndexOf(';'));return {before:el.value.slice(0,i+1),frag:v.slice(i+1).trim(),after:el.value.slice(v.length)}}
+function suggestFor(field,frag,current){const s=phr();const seen=new Set();const out=[];
+  const have=String(current||'').toLowerCase();const f=frag.toLowerCase();
+  const learned=s.phr[field]||{};const pins=s.pins[field]||[];
+  const pool=pins.map(t=>({t,sc:1000,pin:true})).concat(Object.keys(learned).map(t=>({t,sc:learned[t]}))).concat((PHR_SEED[field]||[]).map(t=>({t,sc:0.5})));
+  pool.forEach(x=>{const k=x.t.toLowerCase();if(seen.has(k))return;seen.add(k);
+    if(f){const i=k.indexOf(f);if(i<0||k===f)return;x.sc+=(i===0?50:0)+(k.split(/\s+/).some(w=>w.startsWith(f))?20:0)}
+    else if(have.includes(k))return;
+    out.push(x)});
+  return out.sort((a,b)=>b.sc-a.sc).slice(0,f?6:8)}
+function renderSmart(el){const field=el.dataset.smart;const box=document.getElementById('sg_'+field);if(!box)return;
+  const {frag}=fragmentOf(el);const list=suggestFor(field,frag,el.value);
+  box.innerHTML=list.map(x=>`<button type="button" data-a="pick" data-fl="${field}" data-t="${esc(x.t)}">${x.pin?'★ ':''}${esc(x.t)}</button>`).join('')+
+   (el.value.trim()?`<button type="button" class="pinbtn" data-a="pin" data-fl="${field}" title="Save the whole text as a template">☆ Save as template</button>`:'')}
+function pickPhrase(field,t){const el=document.querySelector(`[data-smart="${field}"]`);if(!el)return;
+  const {before,after}=fragmentOf(el);const sep=before&&!/[\n,;]\s*$/.test(before)?', ':(before&&!/\s$/.test(before)?' ':'');
+  const multi=/\n/.test(t)||field==='hx';el.value=before+sep+t+(multi?'\n':', ')+after.replace(/^[^\n,;]*/,'');
+  el.focus();const pos=el.value.length-after.replace(/^[^\n,;]*/,'').length;try{el.setSelectionRange(pos,pos)}catch(e){}
+  el.dispatchEvent(new Event('input',{bubbles:true}));renderSmart(el)}
+const tidy=t=>String(t||'').replace(/[,;\s]+$/,'').replace(/,\s*\n/g,'\n');
+/* diagnosis/advice chips: built-in + your own most used */
+function topLearned(field,base,n){const m=phr().phr[field]||{};return Object.keys(m).filter(k=>!base.includes(k)).sort((a,b)=>m[b]-m[a]).slice(0,n)}
+/* medicines: remember how you usually prescribe each one */
+function drugUse(){return db.settings.drugUse=db.settings.drugUse||{}}
+function noteDrug(r){if(!r||!r.drug)return;const u=drugUse();const x=u[r.drug]=u[r.drug]||{n:0};x.freq=r.freq;x.timing=r.timing;x.dur=r.dur;save()}
+
+/* ---------- previous medicines ready at follow-up ---------- */
+function prefillFromLast(d){if(db.settings.autoRepeat===false)return d;
+  const prev=visitsOf(d.patientId).find(x=>x.rx&&x.rx.length);if(!prev)return d;
+  d.rx=prev.rx.map(r=>Object.assign({},r,{src:'prev'}));d.diagnosis=prev.diagnosis.slice();d.advice=prev.advice.slice();
+  d.testsAdvised=prev.testsAdvised||'';d.repeatFrom=prev.date;return d}
+
+/* ---------- scans, photos & documents (stored on this device) ---------- */
+const KINDS=['Lab report','USG KUB','USG abdomen','Doppler','CT scan','MRI','X-ray','Echo','ECG','Biopsy report','Discharge summary','Prescription (outside)','Other'];
+const FDB={p:null,open(){if(this.p)return this.p;this.p=new Promise((res,rej)=>{try{const r=indexedDB.open('nephrorx-files',1);
+  r.onupgradeneeded=()=>{const s=r.result.createObjectStore('files',{keyPath:'id'});s.createIndex('pid','patientId')};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)}catch(e){rej(e)}});return this.p},
+ tx(mode,fn){return this.open().then(d=>new Promise((res,rej)=>{const t=d.transaction('files',mode);const st=t.objectStore('files');const out=fn(st);t.oncomplete=()=>res(out&&out.result!==undefined?out.result:out);t.onerror=()=>rej(t.error)}))},
+ put(rec){return this.tx('readwrite',s=>s.put(rec))},
+ del(id){return this.tx('readwrite',s=>s.delete(id))},
+ get(id){return this.tx('readonly',s=>s.get(id))},
+ byPatient(pid){return this.tx('readonly',s=>s.index('pid').getAll(pid))},
+ all(){return this.tx('readonly',s=>s.getAll())}};
+function shrinkImage(file,max){max=max||1800;return new Promise((res)=>{const url=URL.createObjectURL(file);const img=new Image();
+  img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight;const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);
+    const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,w,h);x.drawImage(img,0,0,w,h);URL.revokeObjectURL(url);
+    c.toBlob(b=>res(b||file),'image/jpeg',0.85)};
+  img.onerror=()=>{URL.revokeObjectURL(url);res(file)};img.src=url})}
+let thumbURLs=[];
+async function renderFiles(){const box=$('#files');if(!box)return;const pid=cur.pid;
+  let list=[];try{list=await FDB.byPatient(pid)}catch(e){box.innerHTML='<div class="hint">Photos cannot be stored in this browser.</div>';return}
+  if(pid!==cur.pid||!$('#files'))return;
+  thumbURLs.forEach(u=>URL.revokeObjectURL(u));thumbURLs=[];
+  list.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.createdAt||'').localeCompare(a.createdAt||''));
+  box.innerHTML=list.length?list.map(f=>{const u=URL.createObjectURL(f.blob);thumbURLs.push(u);
+    return `<button class="thumb" data-a="viewFile" data-id="${f.id}"><img src="${u}" alt="${esc(f.kind)}"><span><b>${esc(f.kind)}</b> ${dmy(f.date,1)}${f.caption?'<br>'+esc(f.caption):''}</span></button>`}).join('')
+   :'<div class="hint">No scans or photos yet. Add sonography, CT, biopsy reports or outside prescriptions.</div>'}
+async function addFiles(files,kind,date,caption){const pid=cur.pid;let n=0;
+  for(const f of files){if(!/^image\//.test(f.type)&&!/\.(heic|jpe?g|png)$/i.test(f.name||''))continue;
+    const blob=await shrinkImage(f);await FDB.put({id:uid(),patientId:pid,date:validISO(date)?date:today(),kind:kind||'Other',caption:caption||'',blob,createdAt:new Date().toISOString()});n++}
+  renderFiles();return n}
+const blobToDataURL=b=>new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result);fr.readAsDataURL(b)});
+const dataURLToBlob=u=>fetch(u).then(r=>r.blob());
+
+/* ---------- AI: read reports from photos, dictated or pasted text ---------- */
+let ai=null,aiImg=null;
+try{if(window.claude&&window.claude.use)window.claude.use('sample').then(x=>{ai=x||null;if(ai&&ai.limits)ai.limits().then(l=>{aiImg=l&&l.images||null},()=>{})},()=>{})}catch(e){}
+let aiCtl=null;
+function aiPrompt(text){
+  const keys=allTests().filter(t=>!t.calc).map(t=>`${t.k}: ${t.l} (${t.u})`).join('\n');
+  return `You read laboratory reports for a kidney specialist in India. Extract every test result from the attached photo(s) and/or the text below (the text may be dictated speech, e.g. "creatinine two point three").
+Reply with ONLY JSON in exactly this shape:
+{"reports":[{"date":"YYYY-MM-DD","values":{"cr":"2.31","k":"5.6"},"other":[{"name":"C3","value":"85","unit":"mg/dL"}]}]}
+Rules:
+- One entry per sample date. Cumulative reports with several dates get several entries. Use the sample collection date, else the report date; dates in India are day/month/year. If no date is visible, use "".
+- Put results in "values" using ONLY these keys, converted to these units:
+${keys}
+  Conversions: creatinine in µmol/L ÷ 88.4 = mg/dL; BUN × 2.14 = blood urea; urine ACR in mg/mmol × 8.84 = mg/g; urine PCR in mg/mg is the same as g/g.
+- Numbers only as strings, keep a leading < or > if printed. Never guess a value you cannot read; leave it out.
+- Ignore reference ranges, flags and method names.
+- Any other test result goes in "other" with name, value and unit.
+- Do not include the patient's name or any identifiers.
+${text?'\nText:\n'+text:''}`}
+function cleanAI(res){const out=[];const keys=new Set(allTests().filter(t=>!t.calc).map(t=>t.k));
+  ((res&&res.reports)||[]).forEach(r=>{const values={};Object.entries(r&&r.values||{}).forEach(([k,v])=>{v=String(v).trim();if(keys.has(k)&&/^[<>]?\s*\d+(\.\d+)?$/.test(v))values[k]=v.replace(/\s/g,'')});
+    const other=(Array.isArray(r&&r.other)?r.other:[]).filter(o=>o&&o.name&&/^[<>]?\s*\d+(\.\d+)?$/.test(String(o.value).trim())).slice(0,30).map(o=>({name:String(o.name).slice(0,40),value:String(o.value).trim(),unit:String(o.unit||'').slice(0,15)}));
+    if(Object.keys(values).length||other.length)out.push({date:validISO(r.date)?r.date:'',values,other})});
+  return out}
+function aiErr(e){const c=e&&e.code;return c==='not_granted'?'AI was not allowed. You can allow it next time, or type the values.':
+  c==='cancelled'?'Stopped.':c==='rate_limited'||c==='queue_overflow'?'Too many AI requests just now. Wait a minute and try again.':
+  c==='invalid_json'?'The AI answer could not be read. Try again, or type the values.':c==='image_rejected'?'That photo could not be used. Try a clearer photo.':
+  c==='images_unavailable'?'Photos cannot be sent to AI here.':'AI is not available right now. Type the values, or try again later.'}
+
+/* ---------- add a report: photo (AI), voice/text (local reader or AI) ---------- */
+let rpPhotos=[],rpReports=[],rpKeep=true;
+function pasteForm(preload){
+  rpPhotos=preload?[preload]:[];rpReports=[];rpKeep=!preload;
+  const canPhoto=!!(ai&&aiImg);
+  openModal(`<h3>Add a report</h3>
+   <div class="rp-ways">
+    <div class="card2"><b>Photo of the report</b>
+      <p class="hint">${canPhoto?'AI reads every value and its date. You check them before anything is added.':ai?'Photos cannot be sent to AI in this view.':'Reading photos with AI works in the Claude app today. On the home-screen app it switches on after the AI setup. The photo is still saved in the patient’s files.'}</p>
+      <div class="row"><label class="btn" for="rp_photo">Take or choose photo</label><input type="file" id="rp_photo" accept="image/*" multiple hidden><span class="hint" id="rp_n"></span></div>
+      <div class="files" id="rp_thumbs"></div>
+      ${preload?'':'<label class="chk"><input type="checkbox" id="rp_keep" checked> Also keep the photo in the patient’s files</label>'}
+    </div>
+    <div class="card2"><b>Voice or text</b>
+      <p class="hint">Tap the box, then the microphone on the iPad keyboard, and read the values out, e.g. “creatinine 2.3, potassium 5.6, haemoglobin 9.8”. Or paste text from a lab PDF.</p>
+      <textarea class="inp" id="pt_txt" rows="5" placeholder="Serum creatinine 2.31 mg/dL&#10;Potassium 5.6&#10;Haemoglobin 9.8"></textarea>
+    </div>
+   </div>
+   <div class="row"><label class="f" style="flex-direction:row;align-items:center;gap:6px">Report date<input class="inp" type="date" id="pt_date" value="${today()}" style="width:auto"></label>
+    <button class="btn" data-a="readPaste">Read values</button>
+    ${ai?'<button class="btn pri" data-a="readAI">Read with AI</button><button class="btn" data-a="stopAI" id="rp_stop" hidden>Stop</button>':''}
+    <span class="hint" id="rp_st" role="status"></span></div>
+   <div id="pt_out"></div>
+   <div class="mrow" id="rp_close"><button class="btn" data-a="close">Close</button>${ai?'':'<button class="btn" data-a="savePhotos" id="rp_saveph" hidden>Save photo to files</button>'}</div>`,true);
+  showRpThumbs();
+  $('#rp_photo').addEventListener('change',async e=>{const fs=[...e.target.files];e.target.value='';
+    for(const f of fs){rpPhotos.push(await shrinkImage(f,2000))}showRpThumbs()});
+}
+let rpURLs=[];
+function showRpThumbs(){rpURLs.forEach(u=>URL.revokeObjectURL(u));rpURLs=rpPhotos.map(b=>URL.createObjectURL(b));
+  const box=$('#rp_thumbs');if(!box)return;box.innerHTML=rpURLs.map((u,i)=>`<div class="thumb"><img src="${u}" alt="Report photo ${i+1}"><span><button class="x" data-a="rpDel" data-i="${i}">Remove</button></span></div>`).join('');
+  const n=$('#rp_n');if(n)n.textContent=rpPhotos.length?rpPhotos.length+' photo'+(rpPhotos.length>1?'s':''):'';
+  const sp=$('#rp_saveph');if(sp)sp.hidden=!rpPhotos.length}
+function readPaste(){
+  const txt=$('#pt_txt').value;
+  if(!txt.trim()){$('#rp_st').textContent=rpPhotos.length?(ai?'For photos, use “Read with AI”.':'Photos need the AI setup. Type or dictate the values instead.'):'Type, dictate or paste the values first.';return}
+  const {date,values}=parseReport(txt);if(date)$('#pt_date').value=date;
+  rpReports=[{date:date||$('#pt_date').value,values,other:[]}];
+  if(!Object.keys(values).length){$('#pt_out').innerHTML='<div class="warn">No test values were recognised. Check the test names'+(ai?', or use “Read with AI”':'')+'.</div>';return}
+  $('#rp_st').textContent=date?'Report date found and set.':'';renderReview()}
+async function readAI(){
+  const txt=$('#pt_txt').value.trim();const imgs=aiImg?rpPhotos.slice(0,aiImg.maxCount||5):[];
+  if(!txt&&!imgs.length){$('#rp_st').textContent='Add a photo, or dictate or paste the values first.';return}
+  aiCtl=new AbortController();const st=$('#rp_st');st.textContent='Reading the report… this can take up to a minute.';$('#rp_stop').hidden=false;
+  try{const opts={signal:aiCtl.signal,modelTier:'default'};if(imgs.length)opts.images=imgs;
+    const res=await ai.json(aiPrompt(txt),opts);
+    rpReports=cleanAI(res).map(r=>Object.assign(r,{date:r.date||$('#pt_date').value}));
+    if(!$('#rp_st'))return;
+    if(!rpReports.length){st.textContent='No test values were found. Try a clearer photo, or type the values.';return}
+    st.textContent=`Found ${rpReports.length} report date${rpReports.length>1?'s':''}. Check every value, then add.`;renderReview();
+  }catch(e){if($('#rp_st'))st.textContent=aiErr(e)}finally{const b=$('#rp_stop');if(b)b.hidden=true}}
+function renderReview(){
+  const byK=k=>allTests().find(t=>t.k===k);
+  $('#pt_out').innerHTML=rpReports.map((r,ri)=>`<div class="rev">
+    <div class="row"><b>Report ${rpReports.length>1?ri+1:''}</b><label class="f" style="flex-direction:row;align-items:center;gap:6px">Date<input class="inp" type="date" data-rdate="${ri}" value="${esc(r.date)}" style="width:auto"></label></div>
+    <div class="vit">${Object.keys(r.values).map(k=>{const t=byK(k);return t?`<label class="f">${esc(t.l)} (${esc(t.u)})<input class="inp" inputmode="decimal" data-pk="${k}" data-ri="${ri}" value="${esc(r.values[k])}"></label>`:''}).join('')}</div>
+    ${r.other.length?`<p class="hint">Other tests found. Ticked ones are added as new rows in the grid.</p><div class="vit">${r.other.map((o,oi)=>`<label class="f"><span class="chk"><input type="checkbox" data-ochk="${oi}" data-ri="${ri}" checked>${esc(o.name)}${o.unit?' ('+esc(o.unit)+')':''}</span><input class="inp" data-ov="${oi}" data-ri="${ri}" value="${esc(o.value)}"></label>`).join('')}</div>`:''}
+   </div>`).join('')+`<div class="mrow"><button class="btn" data-a="close">Cancel</button><button class="btn pri" data-a="applyPaste">Add to investigations</button></div>`;
+  const c=$('#rp_close');if(c)c.hidden=true}
+async function applyReport(){const p=P(cur.pid);stage={};let n=0;
+  rpReports.forEach((r,ri)=>{const di=document.querySelector(`[data-rdate="${ri}"]`);const d=di&&validISO(di.value)?di.value:today();
+    p.labs[d]=p.labs[d]||{};stage[d]=stage[d]||{};
+    document.querySelectorAll(`[data-pk][data-ri="${ri}"]`).forEach(i=>{const v=i.value.trim();if(v){p.labs[d][i.dataset.pk]=v;stage[d][i.dataset.pk]=true;n++}});
+    r.other.forEach((o,oi)=>{const ck=document.querySelector(`[data-ochk="${oi}"][data-ri="${ri}"]`);const vi=document.querySelector(`[data-ov="${oi}"][data-ri="${ri}"]`);
+      if(!ck||!ck.checked||!vi||!vi.value.trim())return;const k='c_'+o.name.toLowerCase().replace(/[^a-z0-9]+/g,'_');
+      if(!allTests().some(t=>t.k===k))db.settings.customTests.push({k,l:o.name,u:o.unit});p.labs[d][k]=vi.value.trim();stage[d][k]=true;n++})});
+  save();
+  const keep=$('#rp_keep');if(rpPhotos.length&&keep&&keep.checked){const d=(rpReports[0]&&rpReports[0].date)||$('#pt_date').value;await addFiles(rpPhotos,'Lab report',d,'')}
+  closeModal();renderLabs();setStatus(`Added ${n} value${n===1?'':'s'}`)}
+async function viewFile(id){const f=await FDB.get(id);if(!f)return;const u=URL.createObjectURL(f.blob);
+  openModal(`<h3>${esc(f.kind)} · ${dmy(f.date)}</h3><img class="fullimg" src="${u}" alt="${esc(f.kind)}">
+   <div class="vit"><label class="f">Type<select class="inp" id="fv_kind">${KINDS.map(k=>`<option${k===f.kind?' selected':''}>${esc(k)}</option>`).join('')}</select></label>
+    <label class="f">Date<input class="inp" type="date" id="fv_date" value="${esc(f.date)}"></label>
+    <label class="f" style="grid-column:1/-1">Note (e.g. “Right kidney 9.1 cm, raised echogenicity”)<input class="inp" id="fv_cap" value="${esc(f.caption)}"></label></div>
+   <div class="mrow"><button class="btn" data-a="delFile" data-id="${f.id}">Delete</button>${ai&&aiImg?`<button class="btn" data-a="fileAI" data-id="${f.id}">Read values with AI</button>`:''}<button class="btn" data-a="close">Close</button><button class="btn pri" data-a="saveFile" data-id="${f.id}">Save</button></div>`,true)}
+async function doBackup(out){const files=[];try{for(const f of await FDB.all())files.push(Object.assign({},f,{blob:await blobToDataURL(f.blob)}))}catch(e){}
+  const json=JSON.stringify(Object.assign({},db,{files}));offerFile('nephrorx-backup-'+today()+'.json',json,'application/json',out)}
+function dataURLToBlobSync(u){const m=String(u).match(/^data:([^;,]*)(;base64)?,(.*)$/);if(!m)return null;const bin=m[2]?atob(m[3]):decodeURIComponent(m[3]);
+  const a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);return new Blob([a],{type:m[1]||'image/jpeg'})}
+async function restoreFiles(list){let n=0;for(const f of list||[]){const b=dataURLToBlobSync(f.blob);if(b){await FDB.put(Object.assign({},f,{blob:b}));n++}}return n}
+
+function showTrBox(){const box=$('#tr_box');if(!box)return;const p=P(cur.pid),v=curVisit(),lang=rxLang(p);
+  const need=lang!=='en'?v.advice.filter(a=>!adviceLocal(a,lang)):[];
+  box.innerHTML=need.length?`<div class="warn row"><span style="flex:1;min-width:200px">${need.length} advice line${need.length>1?'s are':' is'} in English only.</span>${ai?'<button class="btn sm" data-a="trAI">Translate with AI</button>':'<span class="hint">AI translation works in the Claude app.</span>'}<span class="hint" id="tr_st"></span></div>`:''}
+async function translateAdvice(){const p=P(cur.pid),v=curVisit(),lang=rxLang(p);const need=v.advice.filter(a=>!adviceLocal(a,lang));if(!need.length||!ai)return;
+  const st=$('#tr_st');st.textContent='Translating…';
+  try{const out=await ai.json(`Translate these instructions for a kidney patient in India into ${LANGS[lang].split('· ')[1]} (${lang}). Use simple everyday words a patient understands. Keep numbers, units and medicine names unchanged. Reply with only a JSON array of strings, in the same order.\n\n`+JSON.stringify(need),{modelTier:'default'});
+    if(!Array.isArray(out)||out.length!==need.length)throw {code:'invalid_json'};
+    const T=db.settings.trans[lang]=db.settings.trans[lang]||{};need.forEach((a,i)=>{if(typeof out[i]==='string'&&out[i].trim())T[a]=out[i].trim().slice(0,300)});save();
+    const b=$('#paperbox');if(b)b.innerHTML=rxHTML();showTrBox();setStatus('Translated. Please check it with someone who reads the language.')}
+  catch(e){if($('#tr_st'))$('#tr_st').textContent=aiErr(e)}}
+
 /* ---------- events ---------- */
 function setStatus(t){const el=$('#status');if(el)el.textContent=t}
 document.addEventListener('click',e=>{
@@ -761,7 +1026,7 @@ document.addEventListener('click',e=>{
   case 'close':closeModal();break;
   case 'openP':if(b.dataset.id)openPatient(b.dataset.id);break;
   case 'openV':openPatient(cur.pid,b.dataset.id);break;
-  case 'newVisit':cur.vid=null;cur.draft=newDraft(cur.pid);renderSheet();break;
+  case 'newVisit':cur.vid=null;cur.draft=prefillFromLast(newDraft(cur.pid));renderSheet();break;
   case 'back':cur.pid=null;renderList();renderEmpty();break;
   case 'dx':{const d=b.dataset.v,i=v.diagnosis.indexOf(d);i<0?v.diagnosis.push(d):v.diagnosis.splice(i,1);touchVisit();renderDx();break}
   case 'adv':{const d=b.dataset.v,i=v.advice.indexOf(d);i<0?v.advice.push(d):v.advice.splice(i,1);touchVisit();renderAdvice();break}
@@ -773,8 +1038,21 @@ document.addEventListener('click',e=>{
     const k='c_'+l.toLowerCase().replace(/[^a-z0-9]+/g,'_');if(!allTests().some(t=>t.k===k))db.settings.customTests.push({k,l,u});$('#ct_name').value='';save();renderLabs();break}
   case 'paste':pasteForm();break;
   case 'readPaste':readPaste();break;
-  case 'applyPaste':{const d=$('#pt_date').value;if(!validISO(d))return;p.labs[d]=p.labs[d]||{};stage={[d]:{}};
-    document.querySelectorAll('[data-pk]').forEach(i=>{const val=i.value.trim();if(val){p.labs[d][i.dataset.pk]=val;stage[d][i.dataset.pk]=true}});save();closeModal();renderLabs();break}
+  case 'applyPaste':applyReport();break;
+  case 'readAI':readAI();break;
+  case 'stopAI':if(aiCtl)aiCtl.abort();break;
+  case 'rpDel':rpPhotos.splice(+b.dataset.i,1);showRpThumbs();break;
+  case 'savePhotos':addFiles(rpPhotos,'Lab report',$('#pt_date').value,'').then(n=>{closeModal();setStatus(`Saved ${n} photo${n===1?'':'s'}`)});break;
+  case 'viewFile':viewFile(b.dataset.id);break;
+  case 'saveFile':FDB.get(b.dataset.id).then(f=>{if(!f)return;f.kind=$('#fv_kind').value;f.date=validISO($('#fv_date').value)?$('#fv_date').value:f.date;f.caption=$('#fv_cap').value.trim();return FDB.put(f)}).then(()=>{closeModal();renderFiles()});break;
+  case 'delFile':if(b.dataset.armed){FDB.del(b.dataset.id).then(()=>{closeModal();renderFiles()})}else{b.dataset.armed='1';b.textContent='Tap again to delete';setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent='Delete'}},3000)}break;
+  case 'fileAI':FDB.get(b.dataset.id).then(f=>{if(f){pasteForm(f.blob);$('#pt_date').value=f.date}});break;
+  case 'pick':pickPhrase(b.dataset.fl,b.dataset.t);break;
+  case 'pin':{const el=document.querySelector(`[data-smart="${b.dataset.fl}"]`);const t=el&&tidy(el.value).trim();if(!t)return;const s=phr();const arr=s.pins[b.dataset.fl]=s.pins[b.dataset.fl]||[];if(!arr.includes(t))arr.unshift(t);save();renderSmart(el);setStatus('Saved as a '+FIELD_NAME[b.dataset.fl].toLowerCase()+' template');break}
+  case 'unpin':{const arr=phr().pins[b.dataset.fl]||[];arr.splice(+b.dataset.i,1);save();b.closest('li').remove();break}
+  case 'forgetLearned':if(b.dataset.armed){db.settings.phr={};db.settings.drugUse={};save();b.textContent='Cleared'}else{b.dataset.armed='1';b.textContent='Tap again to clear'}break;
+  case 'clearRx':v.rx=[];v.repeatFrom=null;touchVisit();renderSheet();break;
+  case 'trAI':translateAdvice();break;
   case 'addDrug':addRx(drugPool()[+b.dataset.i]);break;
   case 'addDrugFree':{const t=$('#drug_q').value.trim();if(!t)return;const d=[t,'1-0-0','After food','1 month'];db.settings.myDrugs.unshift(d);addRx(d);break}
   case 'rxDel':v.rx.splice(+b.dataset.i,1);touchVisit();renderRx();break;
@@ -787,15 +1065,16 @@ document.addEventListener('click',e=>{
   case 'saveTpl':{if(!v.rx.length){setStatus('Add medicines first, then save them as a template');return}
     openModal(`<h3>Save as template</h3><label class="f">Template name<input class="inp" id="tpl_name" autofocus placeholder="e.g. CKD 3 with diabetes"></label>
      <div class="mrow"><button class="btn" data-a="close">Cancel</button><button class="btn pri" data-a="saveTpl2">Save template</button></div>`);break}
-  case 'saveTpl2':{const n=$('#tpl_name').value.trim();if(!n)return;db.settings.templates.push({id:uid(),name:n,rx:v.rx.map(r=>[r.drug,r.freq,r.timing,r.dur]),advice:v.advice.slice()});save();closeModal();renderSheet();setStatus('Template saved');break}
-  case 'preview':openModal(`<div class="row" style="justify-content:space-between"><h3>Prescription preview</h3><div class="row">
+  case 'saveTpl2':{const n=$('#tpl_name').value.trim();if(!n)return;db.settings.templates.push({id:uid(),name:n,rx:v.rx.map(r=>[r.drug,r.freq,r.timing,r.dur]),advice:v.advice.slice(),dx:v.diagnosis.slice()});save();closeModal();renderSheet();setStatus('Template saved');break}
+  case 'preview':if(cur.draft)touchVisit();openModal(`<div class="row" style="justify-content:space-between"><h3>Prescription preview</h3><div class="row">
+      <select class="inp" id="rx_lang" style="width:auto" aria-label="Language for the patient">${Object.entries(LANGS).map(([k,n])=>`<option value="${k}"${k===rxLang(p)?' selected':''}>${k==='en'?n:'English + '+n}</option>`).join('')}</select>
       <button class="btn pri" data-a="pdf">PDF for WhatsApp</button>${framed?'':'<button class="btn" data-a="print">Print</button>'}<button class="btn" data-a="whatsapp">WhatsApp text</button><button class="btn" data-a="close">Close</button></div></div>
       <p class="hint">“PDF for WhatsApp” makes an A4 PDF of exactly this page and opens your iPad’s share sheet, so you can pick WhatsApp and the patient.</p>
-      <div style="overflow-x:auto">${rxHTML()}</div>`,true);break;
+      <div id="tr_box"></div><div style="overflow-x:auto" id="paperbox">${rxHTML()}</div>`,true);ensureFont(rxLang(p));showTrBox();break;
   case 'pdf':pdfFlow();break;
   case 'pdfShare':sharePdf();break;
   case 'print':$('#printArea').innerHTML=rxHTML();window.print();break;
-  case 'whatsapp':{let ph=(p.phone||'').replace(/\D/g,'');if(ph.length===10)ph='91'+ph;
+  case 'whatsapp':{if(cur.draft)touchVisit();let ph=(p.phone||'').replace(/\D/g,'');if(ph.length===10)ph='91'+ph;
     openModal(`<h3>Send on WhatsApp</h3><label class="f">Message (you can edit it)<textarea class="inp" id="wa_txt" rows="14">${esc(waText())}</textarea></label>
      <div class="row">${ph?`<a class="btn pri" id="wa_go" href="https://wa.me/${ph}?text=" target="_blank" rel="noopener">Open WhatsApp chat with ${esc(p.phone)}</a>`:'<span class="hint">Add the patient’s mobile number to open WhatsApp directly.</span>'}
       <button class="btn" data-a="copyWa">Copy message</button><span class="hint" id="wa_st"></span></div>
@@ -805,15 +1084,13 @@ document.addEventListener('click',e=>{
   case 'copyWa':{const t=$('#wa_txt');navigator.clipboard&&navigator.clipboard.writeText(t.value).then(()=>$('#wa_st').textContent='Copied',()=>{t.select();$('#wa_st').textContent='Selected: press Ctrl+C or long-press to copy'});if(!navigator.clipboard){t.select()}break}
   case 'saveSettings':['dr','quals','reg','clinic','address','phone','timings','footer','website','appLink','bookLink'].forEach(k=>db.settings[k]=$('#s_'+k).value.trim());
     ['website','appLink','bookLink'].forEach(k=>db.settings[k]=cleanUrl(db.settings[k]));
-    db.settings.linksOnRx=$('#s_linksOnRx').checked;db.settings.linksOnWa=$('#s_linksOnWa').checked;save();closeModal();break;
+    db.settings.linksOnRx=$('#s_linksOnRx').checked;db.settings.linksOnWa=$('#s_linksOnWa').checked;
+    db.settings.defaultLang=$('#s_defaultLang').value;db.settings.autoRepeat=$('#s_autoRepeat').checked;save();closeModal();break;
   case 'copyLink':{const t=$('#lk_tpl').textContent;const st=$('#lk_st');
     if(navigator.clipboard)navigator.clipboard.writeText(t).then(()=>st.textContent='Copied',()=>{getSelection().selectAllChildren($('#lk_tpl'));st.textContent='Selected: copy it from the menu'});
     else{getSelection().selectAllChildren($('#lk_tpl'))}break}
   case 'exportCsv':offerFile('nephrorx-patients-'+today()+'.csv',patientsCSV(),'text/csv',$('#csv_st'));break;
-  case 'export':{const json=JSON.stringify(db);const name='nephrorx-backup-'+today()+'.json';
-    if(!framed){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));a.download=name;a.click();$('#bk').innerHTML='<p class="hint">Saved '+esc(name)+' to your downloads.</p>'}
-    else if(dl){dl.save({filename:name,data:json}).then(()=>$('#bk').innerHTML='<p class="hint">Backup saved: '+esc(name)+'</p>',err=>{$('#bk').innerHTML='<p class="hint">'+(err&&err.code==='declined'?'Backup not saved.':'Saving files is not available here.')+'</p>'})}
-    else{$('#bk').innerHTML='<p class="hint">Saving files is not available here. Copy this text into a file named '+esc(name)+'.</p><textarea class="inp" rows="5" readonly>'+esc(json)+'</textarea>'}break}
+  case 'export':$('#bk').textContent='Preparing the backup (including photos)…';doBackup($('#bk'));break;
   case 'delSample':db.patients=db.patients.filter(x=>!x.sample);db.visits=db.visits.filter(x=>x.patientId!=='sample1');save();closeModal();if(cur.pid==='sample1'){cur.pid=null;renderEmpty()}renderList();break;
   }
 });
@@ -823,6 +1100,8 @@ $('#search').addEventListener('input',renderList);
 
 document.addEventListener('input',e=>{
   const t=e.target;if(!cur.pid||t.closest('#modal'))return;const v=curVisit(),p=P(cur.pid);
+  if(t.dataset.smart)renderSmart(t);
+  if(t.dataset.pf){p[t.dataset.pf]=t.value;save();return}
   if(t.dataset.f){const path=t.dataset.f.split('.');if(path.length===2)v[path[0]][path[1]]=t.value;else v[path[0]]=t.value;
     if(path[1]==='wt'||path[1]==='ht')$('#v_bmi').value=bmi(v);touchVisit();return}
   if(t.dataset.lab){const d=t.dataset.lab,k=t.dataset.k;p.labs[d]=p.labs[d]||{};if(t.value.trim())p.labs[d][k]=t.value.trim();else delete p.labs[d][k];
@@ -832,15 +1111,19 @@ document.addEventListener('input',e=>{
   if(t.dataset.rx){v.rx[+t.dataset.rx][t.dataset.rf]=t.value;touchVisit();return}
   if(t.id==='drug_q')renderSugg(t.value);
 });
+document.addEventListener('focusin',e=>{const t=e.target;if(!t.dataset||!t.dataset.smart)return;
+  document.querySelectorAll('.sugg[id^="sg_"]').forEach(b=>{if(b.id!=='sg_'+t.dataset.smart)b.innerHTML=''});t._old=t.value;renderSmart(t)});
 document.addEventListener('change',e=>{const t=e.target;
-  if(t.dataset.rx&&t.tagName==='SELECT'){curVisit().rx[+t.dataset.rx][t.dataset.rf]=t.value;touchVisit()}
+  if(t.dataset.smart){const old=new Set(String(t._old||'').split(/[\n,;]+/).map(x=>x.trim()));learn(t.dataset.smart,String(t.value).split(/[\n,;]+/).map(x=>x.trim()).filter(x=>!old.has(x)).join('\n'));t._old=t.value}
+  if(t.id==='rx_lang'){const p=P(cur.pid);p.lang=t.value;save();ensureFont(t.value).then(()=>{const b=$('#paperbox');if(b)b.innerHTML=rxHTML()});const b=$('#paperbox');if(b)b.innerHTML=rxHTML();showTrBox()}
+  if(t.dataset.rx&&t.tagName==='SELECT'){const r=curVisit().rx[+t.dataset.rx];r[t.dataset.rf]=t.value;noteDrug(r);touchVisit()}
   if(t.id==='tpl'&&t.value){const tp=db.settings.templates.find(x=>x.id===t.value),v=curVisit();const have=new Set(v.rx.map(r=>r.drug));
     tp.rx.forEach(r=>{if(!have.has(r[0]))v.rx.push({drug:r[0],freq:r[1],timing:r[2],dur:r[3],note:''})});
-    (tp.advice||[]).forEach(a=>{const s=typeof a==='number'?ADVICE[a]:a;if(s&&!v.advice.includes(s))v.advice.push(s)});touchVisit();t.value='';renderRx();renderAdvice();setStatus('Template applied: '+tp.name)}
+    (tp.advice||[]).forEach(a=>{const s=typeof a==='number'?ADVICE[a]:a;if(s&&!v.advice.includes(s))v.advice.push(s)});(tp.dx||[]).forEach(d=>{if(!v.diagnosis.includes(d))v.diagnosis.push(d)});touchVisit();t.value='';renderRx();renderAdvice();renderDx();setStatus('Template applied: '+tp.name)}
 });
 document.addEventListener('keydown',e=>{const t=e.target;if(e.key!=='Enter')return;
   if(t.id==='drug_q'){e.preventDefault();const first=$('#sugg button');if(first)first.click();return}
-  if(t.id==='dx_add'||t.id==='adv_add'){e.preventDefault();const val=t.value.trim();if(!val)return;const v=curVisit();const arr=t.id==='dx_add'?v.diagnosis:v.advice;if(!arr.includes(val))arr.push(val);t.value='';touchVisit();t.id==='dx_add'?renderDx():renderAdvice();return}
+  if(t.id==='dx_add'||t.id==='adv_add'){e.preventDefault();const val=t.value.trim();if(!val)return;const v=curVisit();const arr=t.id==='dx_add'?v.diagnosis:v.advice;if(!arr.includes(val))arr.push(val);learn(t.id==='dx_add'?'dx':'adv',val);t.value='';touchVisit();t.id==='dx_add'?renderDx():renderAdvice();return}
   if(t.id==='ct_name'){e.preventDefault();document.querySelector('[data-a="addTest"]').click();return}
   if(t.dataset.lab){e.preventDefault();const cells=[...document.querySelectorAll(`[data-lab="${t.dataset.lab}"]`)];const n=cells[cells.indexOf(t)+1];if(n){n.focus();n.select()}}
 });
